@@ -8,10 +8,7 @@ test "example" {
     var result = std.ArrayList(u8).init(std.testing.allocator);
     defer result.deinit();
 
-    const file = try std.fs.cwd().createFile(
-        "test.nbt",
-        .{}
-    );
+    const file = try std.fs.cwd().createFile("test.nbt", .{});
     const file_writer = file.writer();
 
     var list = znbt.collections.List.init(std.testing.allocator, .Compound);
@@ -39,7 +36,7 @@ test "example" {
 
     try c3.put("array", array);
     try c3.put("double", @as(f64, 12.34));
-    
+
     try list.append(c1);
     try list.append(c2);
     try list.append(c3);
@@ -48,7 +45,7 @@ test "example" {
 
     try znbt.io.write(std.testing.allocator, "znbt test", root, file_writer, .Gzip);
 
-    for(result.items) |byte| {
+    for (result.items) |byte| {
         std.debug.print("{x:0>2} ", .{byte});
     }
 

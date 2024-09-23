@@ -4,7 +4,7 @@ ZNBT is a Zig library for working with the Named Binary Tag (NBT) format, common
 
 ## Zig Version
 
-Tested on Zig 0.14.0
+Tested on Zig 0.13.0
 
 ## Features
 
@@ -24,4 +24,5 @@ TO BE DONE
 ## TODO
 
 - Read NBT files into Compound struct
-- Write `.schem` file from Compound struct
+- Convert Compound struct to SNBT text
+- Write `.schem` file from Compound struct (in separate project)
