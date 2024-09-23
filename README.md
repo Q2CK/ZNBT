@@ -2,6 +2,10 @@
 
 ZNBT is a Zig library for working with the Named Binary Tag (NBT) format, commonly used in Minecraft-related applications.
 
+## Zig Version
+
+Tested on Zig 0.14.0
+
 ## Features
 
 - Read and write NBT data
