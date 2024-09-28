@@ -8,7 +8,7 @@ test "example" {
     var result = std.ArrayList(u8).init(std.testing.allocator);
     defer result.deinit();
 
-    const file = try std.fs.cwd().createFile("test.nbt", .{});
+    const file = try std.fs.cwd().createFile("data/example.nbt", .{});
     const file_writer = file.writer();
 
     var list = znbt.collections.List.init(std.testing.allocator, .Compound);
