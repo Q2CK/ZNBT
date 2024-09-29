@@ -227,8 +227,11 @@ pub const Tag = union(TagType) {
             .Compound => |value| {
                 try value.snbt(writer);
             },
+            .List => |value| {
+                try value.snbt(writer);  
+            },
             else => |value| {
-                std.debug.panic("Unsupported tag type: {s}", .{@tagName(value)});
+                std.debug.panic("Unimplemented tag type: {s}", .{@tagName(value)});
             },
         }
     }

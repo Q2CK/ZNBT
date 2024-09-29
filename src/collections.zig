@@ -104,6 +104,19 @@ pub const List = struct {
     pub fn swapRemove(self: *Self, i: usize) Tag {
         return self.tags.swapRemove(i);
     }
+
+    pub fn snbt(self: Self, writer: anytype) NbtError!void {
+        _ = try writer.write("[");
+        var is_first_tag = true;
+        for (self.tags.items) |tag| {
+            if (!is_first_tag) {
+                _ = try writer.write(",");
+            }
+            _ = try tag.snbt(writer);
+            is_first_tag = false;
+        }
+        _ = try writer.write("]");
+    }
 };
 
 /// Collection of named NBT Tags, an NBT-compatible wrapper
@@ -186,22 +199,6 @@ pub const Compound = struct {
             _ = try writer.write(":");
             const tag = entry.value_ptr.*;
             try tag.snbt(writer);
-            // const active_tag: TagType = tag;
-            // switch (active_tag) {
-            //     .Int => {
-            //         _ = try writer.print("{d}", .{tag.Int});
-            //     },
-            //     .String => {
-            //         _ = try writer.print("\"{s}\"", .{tag.String});
-            //     },
-            //     .Compound => {
-            //         try tag.Compound.snbt(writer);
-            //     },
-            //     .List => {},
-            //     else => {
-            //         std.debug.panic("Unsupported tag type: {s}", .{@tagName(active_tag)});
-            //     },
-            // }
 
             is_first_tag = false;
         }
@@ -209,6 +206,7 @@ pub const Compound = struct {
         _ = try writer.write("}");
     }
 
+    /// TODO: Implement
     pub fn snbtPretty(self: Self, writer: anytype) NbtError!void {
         _ = try writer.write("{");
 
@@ -244,7 +242,4 @@ pub const Compound = struct {
 
         _ = try writer.write("}");
     }
-
-    // fn snbtInner(self: Self, ) {
-    // }
 };
