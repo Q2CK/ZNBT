@@ -185,23 +185,23 @@ pub const Compound = struct {
             _ = try writer.write(entry.key_ptr.*);
             _ = try writer.write(":");
             const tag = entry.value_ptr.*;
-            const active_tag: TagType = tag;
-            // try tag.snbt(writer);
-            switch (active_tag) {
-                .Int => {
-                    _ = try writer.print("{d}", .{tag.Int});
-                },
-                .String => {
-                    _ = try writer.print("\"{s}\"", .{tag.String});
-                },
-                .Compound => {
-                    try tag.Compound.snbt(writer);
-                },
-                .List => {},
-                else => {
-                    std.debug.panic("Unsupported tag type: {s}", .{@tagName(active_tag)});
-                },
-            }
+            try tag.snbt(writer);
+            // const active_tag: TagType = tag;
+            // switch (active_tag) {
+            //     .Int => {
+            //         _ = try writer.print("{d}", .{tag.Int});
+            //     },
+            //     .String => {
+            //         _ = try writer.print("\"{s}\"", .{tag.String});
+            //     },
+            //     .Compound => {
+            //         try tag.Compound.snbt(writer);
+            //     },
+            //     .List => {},
+            //     else => {
+            //         std.debug.panic("Unsupported tag type: {s}", .{@tagName(active_tag)});
+            //     },
+            // }
 
             is_first_tag = false;
         }
