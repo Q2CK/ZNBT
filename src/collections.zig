@@ -185,13 +185,13 @@ pub const Compound = struct {
             _ = try writer.write(entry.key_ptr.*);
             _ = try writer.write(":");
             const tag = entry.value_ptr.*;
-            const active_tag = std.meta.activeTag(entry.value_ptr.*);
+            const active_tag = std.meta.activeTag(tag);
             switch (active_tag) {
                 .Int => {
-                    _ = try writer.print("{d}", .{entry.value_ptr.*.Int});
+                    _ = try writer.print("{d}", .{tag.Int});
                 },
                 .String => {
-                    _ = try writer.print("\"{s}\"", .{entry.value_ptr.*.String});
+                    _ = try writer.print("\"{s}\"", .{tag.String});
                 },
                 .Compound => {
                     try tag.Compound.snbt(writer);

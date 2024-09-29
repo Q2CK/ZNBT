@@ -50,6 +50,7 @@ pub fn write(alloc: std.mem.Allocator, name: []const u8, compound: collections.C
 }
 
 /// Reads binary NBT data from the file at `path` and returns the root compound as a `collections.Compound`.
+/// TODO: Implement this method and add tests
 pub fn read(alloc: std.mem.Allocator, path: []const u8) !collections.Compound {
     const file = try std.fs.cwd().openFile(path, .{});
     defer file.close();
