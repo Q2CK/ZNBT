@@ -17,4 +17,5 @@ pub const io = struct {
     pub const readBin = io_import.readBin;
     pub const writeSNBT = io_import.writeSNBT;
     pub const Compression = io_import.Compression;
+    pub const SNBTFormat = io_import.SNBTFormat;
 };

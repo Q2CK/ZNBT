@@ -1,5 +1,5 @@
 const std = @import("std");
-const errors = @import("errors.zig");
+const NbtError = @import("errors.zig").NbtError;
 const Allocator = std.mem.Allocator;
 
 const tag_import = @import("tag.zig");
@@ -50,12 +50,12 @@ pub const List = struct {
     /// be managed by the `List`. The tag must then be freed accordingly by the caller.
     /// This only concerns `value`s of type `List` and `Compound`, as other tag types
     /// do not contain dynamically allocated memory
-    pub fn append(self: *Self, value: anytype) !void {
+    pub fn append(self: *Self, value: anytype) NbtError!void {
         var tag = Tag.from(value);
         errdefer tag.deinit();
 
         if (tag != self.tags_type) {
-            return errors.NbtError.ListTypeMismatch;
+            return NbtError.ListTypeMismatch;
         } else {
             try self.tags.append(tag);
         }
@@ -71,12 +71,12 @@ pub const List = struct {
     /// be managed by the List. The tag must then be freed accordingly by the caller.
     /// This only concerns `value`s of type `List` and `Compound`, as other tag types
     /// do not contain dynamically allocated memory
-    pub fn insert(self: *Self, i: usize, value: anytype) !void {
+    pub fn insert(self: *Self, i: usize, value: anytype) NbtError!void {
         var tag = Tag.from(value);
         errdefer tag.deinit();
 
         if (tag != self.tags_type) {
-            return errors.NbtError.ListTypeMismatch;
+            return NbtError.ListTypeMismatch;
         } else {
             try self.tags.insert(i, tag);
         }
@@ -103,6 +103,19 @@ pub const List = struct {
     /// Asserts that the list is not empty. Asserts that the index is in bounds."
     pub fn swapRemove(self: *Self, i: usize) Tag {
         return self.tags.swapRemove(i);
+    }
+
+    pub fn snbt(self: Self, writer: anytype) NbtError!void {
+        _ = try writer.write("[");
+        var is_first_tag = true;
+        for (self.tags.items) |tag| {
+            if (!is_first_tag) {
+                _ = try writer.write(",");
+            }
+            _ = try tag.snbt(writer);
+            is_first_tag = false;
+        }
+        _ = try writer.write("]");
     }
 };
 
@@ -144,7 +157,7 @@ pub const Compound = struct {
     /// be managed by the Compound. The tag must then be freed accordingly by the caller.
     /// This only concerns `value`s of type `List` and `Compound`, as other tag types
     /// do not contain dynamically allocated memory
-    pub fn put(self: *Self, name: []const u8, value: anytype) !void {
+    pub fn put(self: *Self, name: []const u8, value: anytype) NbtError!void {
         const new_tag = Tag.from(value);
         try self.tags.put(name, new_tag);
     }
@@ -173,7 +186,7 @@ pub const Compound = struct {
     /// Format: `{name1:123,name2:"sometext1",name3:{subname1:456,subname2:"sometext2"}}`
     ///
     /// https://minecraft.fandom.com/wiki/NBT_format#SNBT_format
-    pub fn snbt(self: Self, writer: anytype) !void {
+    pub fn snbt(self: Self, writer: anytype) NbtError!void {
         _ = try writer.write("{");
 
         var it = self.tags.iterator();
@@ -185,6 +198,29 @@ pub const Compound = struct {
             _ = try writer.write(entry.key_ptr.*);
             _ = try writer.write(":");
             const tag = entry.value_ptr.*;
+            try tag.snbt(writer);
+
+            is_first_tag = false;
+        }
+
+        _ = try writer.write("}");
+    }
+
+    /// TODO: Implement
+    pub fn snbtPretty(self: Self, writer: anytype) NbtError!void {
+        _ = try writer.write("{");
+
+        var it = self.tags.iterator();
+        var is_first_tag = true;
+        const indent = 4;
+        while (it.next()) |entry| {
+            if (!is_first_tag) {
+                _ = try writer.write(",");
+            }
+            try writer.writeByteNTimes(' ', indent);
+            _ = try writer.write(entry.key_ptr.*);
+            _ = try writer.write(": ");
+            const tag = entry.value_ptr.*;
             const active_tag: TagType = tag;
             switch (active_tag) {
                 .Int => {
@@ -194,7 +230,7 @@ pub const Compound = struct {
                     _ = try writer.print("\"{s}\"", .{tag.String});
                 },
                 .Compound => {
-                    try tag.Compound.snbt(writer);
+                    try tag.Compound.snbtPretty(writer);
                 },
                 else => {
                     std.debug.panic("Unsupported tag type: {s}", .{@tagName(active_tag)});

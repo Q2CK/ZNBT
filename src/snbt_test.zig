@@ -36,9 +36,21 @@ test "multiple tags" {
     try test_snbt(&root, "{b:\"str\",a:1}");
 }
 
+test "list" {
+    var root = znbt.collections.Compound.init(std.testing.allocator);
+    defer root.deinit();
+    var list = znbt.collections.List.init(std.testing.allocator, .Int);
+    try list.append(@as(i32, 10));
+    try list.append(@as(i32, 20));
+    try list.append(@as(i32, 30));
+    try root.put("d", list);
+
+    try test_snbt(&root, "{d:[10,20,30]}");
+}
+
 fn test_snbt(root: *znbt.collections.Compound, expected: []const u8) !void {
     var actual_arraylist = std.ArrayList(u8).init(std.testing.allocator);
-    try znbt.io.writeSNBT(root.*, actual_arraylist.writer());
+    try znbt.io.writeSNBT(root.*, actual_arraylist.writer(), znbt.io.SNBTFormat.Compact);
     const actual = try actual_arraylist.toOwnedSlice();
     try std.testing.expectEqualSlices(u8, expected, actual);
     std.testing.allocator.free(actual);
