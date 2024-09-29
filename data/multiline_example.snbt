@@ -1,0 +1,19 @@
+{
+    list: [
+        {
+            number1: 123,
+            number2: 456,
+            number3: 789
+        },
+        {
+            string1: "str1",
+            string2: "str2"
+        },
+        {
+            array: [
+                1
+            ],
+            double: 12.34
+        }
+    ]
+}

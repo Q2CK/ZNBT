@@ -186,6 +186,7 @@ pub const Compound = struct {
             _ = try writer.write(":");
             const tag = entry.value_ptr.*;
             const active_tag: TagType = tag;
+            // try tag.snbt(writer);
             switch (active_tag) {
                 .Int => {
                     _ = try writer.print("{d}", .{tag.Int});
@@ -195,6 +196,43 @@ pub const Compound = struct {
                 },
                 .Compound => {
                     try tag.Compound.snbt(writer);
+                },
+                .List => {},
+                else => {
+                    std.debug.panic("Unsupported tag type: {s}", .{@tagName(active_tag)});
+                },
+            }
+
+            is_first_tag = false;
+        }
+
+        _ = try writer.write("}");
+    }
+
+    pub fn snbtPretty(self: Self, writer: anytype) !void {
+        _ = try writer.write("{");
+
+        var it = self.tags.iterator();
+        var is_first_tag = true;
+        const indent = 4;
+        while (it.next()) |entry| {
+            if (!is_first_tag) {
+                _ = try writer.write(",");
+            }
+            try writer.writeByteNTimes(' ', indent);
+            _ = try writer.write(entry.key_ptr.*);
+            _ = try writer.write(": ");
+            const tag = entry.value_ptr.*;
+            const active_tag: TagType = tag;
+            switch (active_tag) {
+                .Int => {
+                    _ = try writer.print("{d}", .{tag.Int});
+                },
+                .String => {
+                    _ = try writer.print("\"{s}\"", .{tag.String});
+                },
+                .Compound => {
+                    try tag.Compound.snbtPretty(writer);
                 },
                 else => {
                     std.debug.panic("Unsupported tag type: {s}", .{@tagName(active_tag)});
@@ -206,4 +244,7 @@ pub const Compound = struct {
 
         _ = try writer.write("}");
     }
+
+    // fn snbtInner(self: Self, ) {
+    // }
 };
