@@ -13,7 +13,8 @@ pub const collections = struct {
 };
 
 pub const io = struct {
-    pub const write = io_import.write;
-    pub const read = io_import.read;
+    pub const writeBin = io_import.writeBin;
+    pub const readBin = io_import.readBin;
+    pub const writeSNBT = io_import.writeSNBT;
     pub const Compression = io_import.Compression;
 };

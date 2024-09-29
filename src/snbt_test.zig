@@ -39,7 +39,7 @@ test "multiple tags" {
 fn test_snbt(root: *znbt.collections.Compound, expected: []const u8) !void {
     var actual_arraylist = std.ArrayList(u8).init(std.testing.allocator);
     defer actual_arraylist.deinit();
-    try root.snbt(actual_arraylist.writer());
+    try znbt.io.writeSNBT(root.*, actual_arraylist.writer());
     const actual = try actual_arraylist.toOwnedSlice();
     try std.testing.expectEqualSlices(u8, expected, actual);
     std.testing.allocator.free(actual);
