@@ -185,7 +185,7 @@ pub const Compound = struct {
             _ = try writer.write(entry.key_ptr.*);
             _ = try writer.write(":");
             const tag = entry.value_ptr.*;
-            const active_tag = std.meta.activeTag(tag);
+            const active_tag: TagType = tag;
             switch (active_tag) {
                 .Int => {
                     _ = try writer.print("{d}", .{tag.Int});

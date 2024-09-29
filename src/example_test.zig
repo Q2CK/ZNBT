@@ -43,7 +43,7 @@ test "example" {
 
     try root.put("list", list);
 
-    try znbt.io.write(std.testing.allocator, "znbt test", root, file_writer, .Gzip);
+    try znbt.io.writeBin(std.testing.allocator, "znbt test", root, file_writer, .Gzip);
 
     for (result.items) |byte| {
         std.debug.print("{x:0>2} ", .{byte});

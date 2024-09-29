@@ -8,12 +8,24 @@ const Tag = tag_import.Tag;
 const TagType = tag_import.TagType;
 
 /// Compression method for the final binary NBT data
-pub const Compression = enum { None, Gzip, Zlib };
+pub const Compression = enum { 
+    None, Gzip, Zlib 
+};
+
+/// Text formatting method for SNBT data 
+pub const SNBTFormat = enum {
+    /// No unnecessary characters
+    Compact,
+    /// Readable single-line formatting
+    SingleLine,
+    /// Readable multi-line formatting
+    MultiLine
+};
 
 /// Writes binary NBT data into the `writer`, using the given `name` and `compound` as the root tag.
 ///
 /// Available compression methods: `.None`, `.Gzip`, `.Zlib`
-pub fn write(alloc: std.mem.Allocator, name: []const u8, compound: collections.Compound, writer: anytype, compression: Compression) !void {
+pub fn writeBin(alloc: std.mem.Allocator, name: []const u8, compound: collections.Compound, writer: anytype, compression: Compression) !void {
     // Reserve memory for the temporary uncompressed data
     var raw = std.ArrayList(u8).init(alloc);
     defer raw.deinit();
@@ -51,7 +63,7 @@ pub fn write(alloc: std.mem.Allocator, name: []const u8, compound: collections.C
 
 /// Reads binary NBT data from the file at `path` and returns the root compound as a `collections.Compound`.
 /// TODO: Implement this method and add tests
-pub fn read(alloc: std.mem.Allocator, path: []const u8) !collections.Compound {
+pub fn readBin(alloc: std.mem.Allocator, path: []const u8) !collections.Compound {
     const file = try std.fs.cwd().openFile(path, .{});
     defer file.close();
 
@@ -60,4 +72,12 @@ pub fn read(alloc: std.mem.Allocator, path: []const u8) !collections.Compound {
     defer alloc.free(content);
 
     return collections.Compound.init(alloc);
+}
+
+/// Writes NBT data in SNBT format into the `writer`, using the given `compound` as the root tag.
+pub fn writeSNBT(compound: collections.Compound, writer: anytype, format: SNBTFormat) !void {
+    // TODO: Implement different text formatting methods
+    _ = format;
+
+    try compound.snbt(writer);
 }
