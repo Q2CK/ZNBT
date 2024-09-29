@@ -1,5 +1,5 @@
 const std = @import("std");
-const errors = @import("errors.zig");
+const NbtError = @import("errors.zig").NbtError;
 
 const collections = @import("collections.zig");
 
@@ -80,7 +80,7 @@ pub const Tag = union(TagType) {
     ///
     /// This method only writes the `Tag`'s contents. The type ID and name of the `Tag`
     /// are written by the `Compound` that surrounds this `Tag`.
-    pub fn writeBinRepr(self: Self, writer: anytype) !void {
+    pub fn writeBinRepr(self: Self, writer: anytype) NbtError!void {
         switch (self) {
             .End => {
                 _ = try writer.write(&.{0});
@@ -117,7 +117,7 @@ pub const Tag = union(TagType) {
                 // Write the array length
                 const array_len_usize = value.len;
                 const array_len_trunc: u32 = @truncate(array_len_usize);
-                const array_len: i32 = if (array_len_usize < std.math.maxInt(i32)) @bitCast(array_len_trunc) else return errors.NbtError.ValueOutOfBounds;
+                const array_len: i32 = if (array_len_usize < std.math.maxInt(i32)) @bitCast(array_len_trunc) else return NbtError.ValueOutOfBounds;
                 var array_len_buffer: [4]u8 = undefined;
                 std.mem.writeInt(i32, &array_len_buffer, array_len, .big);
                 _ = try writer.write(&array_len_buffer);
@@ -130,7 +130,7 @@ pub const Tag = union(TagType) {
             .String => |value| {
                 // Write the array length
                 const array_len_usize = value.len;
-                const array_len: u16 = if (array_len_usize < std.math.maxInt(u16)) @truncate(array_len_usize) else return errors.NbtError.ValueOutOfBounds;
+                const array_len: u16 = if (array_len_usize < std.math.maxInt(u16)) @truncate(array_len_usize) else return NbtError.ValueOutOfBounds;
                 var array_len_buffer: [2]u8 = undefined;
                 std.mem.writeInt(u16, &array_len_buffer, array_len, .big);
                 _ = try writer.write(&array_len_buffer);
@@ -145,7 +145,7 @@ pub const Tag = union(TagType) {
                 // Write the list length
                 const list_len_usize = value.tags.items.len;
                 const list_len_trunc: u32 = @truncate(list_len_usize);
-                const list_len: i32 = if (list_len_usize < std.math.maxInt(i32)) @bitCast(list_len_trunc) else return errors.NbtError.ValueOutOfBounds;
+                const list_len: i32 = if (list_len_usize < std.math.maxInt(i32)) @bitCast(list_len_trunc) else return NbtError.ValueOutOfBounds;
                 var list_len_buffer: [4]u8 = undefined;
                 std.mem.writeInt(i32, &list_len_buffer, list_len, .big);
                 _ = try writer.write(&list_len_buffer);
@@ -166,7 +166,7 @@ pub const Tag = union(TagType) {
                     // Write the tag's name length
                     const tag_name = entry.key_ptr.*;
                     const tag_name_len_usize = tag_name.len;
-                    const tag_name_len: u16 = if (tag_name_len_usize < std.math.maxInt(u16)) @truncate(tag_name_len_usize) else return errors.NbtError.NameTooLong;
+                    const tag_name_len: u16 = if (tag_name_len_usize < std.math.maxInt(u16)) @truncate(tag_name_len_usize) else return NbtError.NameTooLong;
                     var tag_name_len_buffer: [2]u8 = undefined;
                     std.mem.writeInt(u16, &tag_name_len_buffer, tag_name_len, .big);
                     _ = try writer.write(&tag_name_len_buffer);
@@ -185,7 +185,7 @@ pub const Tag = union(TagType) {
                 // Write the array length
                 const array_len_usize = value.len;
                 const array_len_trunc: u32 = @truncate(array_len_usize);
-                const array_len: i32 = if (array_len_usize < std.math.maxInt(i32)) @bitCast(array_len_trunc) else return errors.NbtError.ValueOutOfBounds;
+                const array_len: i32 = if (array_len_usize < std.math.maxInt(i32)) @bitCast(array_len_trunc) else return NbtError.ValueOutOfBounds;
                 var array_len_buffer: [4]u8 = undefined;
                 std.mem.writeInt(i32, &array_len_buffer, array_len, .big);
                 _ = try writer.write(&array_len_buffer);
@@ -201,7 +201,7 @@ pub const Tag = union(TagType) {
                 // Write the array length
                 const array_len_usize = value.len;
                 const array_len_trunc: u32 = @truncate(array_len_usize);
-                const array_len: i32 = if (array_len_usize < std.math.maxInt(i32)) @bitCast(array_len_trunc) else return errors.NbtError.ValueOutOfBounds;
+                const array_len: i32 = if (array_len_usize < std.math.maxInt(i32)) @bitCast(array_len_trunc) else return NbtError.ValueOutOfBounds;
                 var array_len_buffer: [4]u8 = undefined;
                 std.mem.writeInt(i32, &array_len_buffer, array_len, .big);
                 _ = try writer.write(&array_len_buffer);
@@ -216,7 +216,7 @@ pub const Tag = union(TagType) {
         }
     }
 
-    pub fn snbt(self: Self, writer: anytype) !void {
+    pub fn snbt(self: Self, writer: anytype) NbtError!void {
         switch (self) {
             .Int => |value| {
                 _ = try writer.print("{d}", .{value});
