@@ -235,4 +235,24 @@ pub const Tag = union(TagType) {
             },
         }
     }
+
+    pub fn snbtMultiline(self: Self, writer: anytype, indent: usize) NbtError!void {
+        switch (self) {
+            .Int => |value| {
+                _ = try writer.print("{d}", .{value});
+            },
+            .String => |value| {
+                _ = try writer.print("\"{s}\"", .{value});
+            },
+            .Compound => |value| {
+                try value.snbtMultiline(writer, indent);
+            },
+            .List => |value| {
+                try value.snbtMultiline(writer, indent);  
+            },
+            else => |value| {
+                std.debug.panic("Unimplemented tag type: {s}", .{@tagName(value)});
+            },
+        }
+    }
 };

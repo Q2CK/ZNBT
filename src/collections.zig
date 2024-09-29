@@ -6,6 +6,9 @@ const tag_import = @import("tag.zig");
 const Tag = tag_import.Tag;
 const TagType = tag_import.TagType;
 
+const constants_import = @import("constants.zig");
+const INDENT_SIZE_IN_SPACES = constants_import.INDENT_SIZE_IN_SPACES;
+
 /// List of unnamed NBT tags of the same type, an NBT-compatible
 /// wrapper around `std.ArrayList(Tag)`.
 ///
@@ -117,6 +120,25 @@ pub const List = struct {
         }
         _ = try writer.write("]");
     }
+
+    pub fn snbtMultiline(self: Self, writer: anytype, indent: usize) NbtError!void {
+        _ = try writer.write("[");
+
+        var is_first_tag = true;
+        for (self.tags.items) |tag| {
+            if (!is_first_tag) {
+                _ = try writer.write(",");
+            }
+            _ = try writer.write("\n",);
+            _ = try writer.writeByteNTimes(' ', indent + INDENT_SIZE_IN_SPACES);
+            try tag.snbtMultiline(writer, indent + INDENT_SIZE_IN_SPACES);
+            is_first_tag = false;
+        }
+
+        _ = try writer.write("\n");
+        _ = try writer.writeByteNTimes(' ', indent);
+        _ = try writer.write("]");
+    }
 };
 
 /// Collection of named NBT Tags, an NBT-compatible wrapper
@@ -206,40 +228,28 @@ pub const Compound = struct {
         _ = try writer.write("}");
     }
 
-    /// TODO: Implement
-    pub fn snbtPretty(self: Self, writer: anytype) NbtError!void {
+    pub fn snbtMultiline(self: Self, writer: anytype, indent: usize) NbtError!void {
         _ = try writer.write("{");
 
         var it = self.tags.iterator();
         var is_first_tag = true;
-        const indent = 4;
+    
         while (it.next()) |entry| {
             if (!is_first_tag) {
                 _ = try writer.write(",");
             }
-            try writer.writeByteNTimes(' ', indent);
+            _ = try writer.write("\n");
+            _ = try writer.writeByteNTimes(' ', indent + INDENT_SIZE_IN_SPACES);
             _ = try writer.write(entry.key_ptr.*);
             _ = try writer.write(": ");
             const tag = entry.value_ptr.*;
-            const active_tag: TagType = tag;
-            switch (active_tag) {
-                .Int => {
-                    _ = try writer.print("{d}", .{tag.Int});
-                },
-                .String => {
-                    _ = try writer.print("\"{s}\"", .{tag.String});
-                },
-                .Compound => {
-                    try tag.Compound.snbtPretty(writer);
-                },
-                else => {
-                    std.debug.panic("Unsupported tag type: {s}", .{@tagName(active_tag)});
-                },
-            }
+            try tag.snbtMultiline(writer, indent + INDENT_SIZE_IN_SPACES);
+            _ = try writer.write("\n");
 
             is_first_tag = false;
         }
 
+        _ = try writer.writeByteNTimes(' ', indent);
         _ = try writer.write("}");
     }
 };
