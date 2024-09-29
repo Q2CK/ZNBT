@@ -8,14 +8,10 @@ const Tag = tag_import.Tag;
 const TagType = tag_import.TagType;
 
 /// Compression method for the final binary NBT data
-pub const Compression = enum {
-    None,
-    Gzip,
-    Zlib
-};
+pub const Compression = enum { None, Gzip, Zlib };
 
 /// Writes binary NBT data into the `writer`, using the given `name` and `compound` as the root tag.
-/// 
+///
 /// Available compression methods: `.None`, `.Gzip`, `.Zlib`
 pub fn write(alloc: std.mem.Allocator, name: []const u8, compound: collections.Compound, writer: anytype, compression: Compression) !void {
     // Reserve memory for the temporary uncompressed data
@@ -46,9 +42,22 @@ pub fn write(alloc: std.mem.Allocator, name: []const u8, compound: collections.C
     const raw_reader = raw_stream.reader();
 
     // Write the data into the writer with the selected compression method
-    switch(compression) {
+    switch (compression) {
         .None => _ = try writer.write(raw.items),
         .Gzip => try std.compress.gzip.compress(raw_reader, writer, .{ .level = .best }),
-        .Zlib => try std.compress.zlib.compress(raw_reader, writer, .{ .level = .best })
+        .Zlib => try std.compress.zlib.compress(raw_reader, writer, .{ .level = .best }),
     }
+}
+
+/// Reads binary NBT data from the file at `path` and returns the root compound as a `collections.Compound`.
+/// TODO: Implement this method and add tests
+pub fn read(alloc: std.mem.Allocator, path: []const u8) !collections.Compound {
+    const file = try std.fs.cwd().openFile(path, .{});
+    defer file.close();
+
+    const reader = file.reader();
+    const content = try reader.readAllAlloc(alloc, std.math.maxInt(usize));
+    defer alloc.free(content);
+
+    return collections.Compound.init(alloc);
 }
