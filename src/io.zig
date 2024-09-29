@@ -2,6 +2,7 @@ const std = @import("std");
 
 const collections = @import("collections.zig");
 const errors = @import("errors.zig");
+const NbtError = errors.NbtError;
 
 const tag_import = @import("tag.zig");
 const Tag = tag_import.Tag;
@@ -25,7 +26,7 @@ pub const SNBTFormat = enum {
 /// Writes binary NBT data into the `writer`, using the given `name` and `compound` as the root tag.
 ///
 /// Available compression methods: `.None`, `.Gzip`, `.Zlib`
-pub fn writeBin(alloc: std.mem.Allocator, name: []const u8, compound: collections.Compound, writer: anytype, compression: Compression) !void {
+pub fn writeBin(alloc: std.mem.Allocator, name: []const u8, compound: collections.Compound, writer: anytype, compression: Compression) NbtError!void {
     // Reserve memory for the temporary uncompressed data
     var raw = std.ArrayList(u8).init(alloc);
     defer raw.deinit();
@@ -75,7 +76,7 @@ pub fn readBin(alloc: std.mem.Allocator, path: []const u8) !collections.Compound
 }
 
 /// Writes NBT data in SNBT format into the `writer`, using the given `compound` as the root tag.
-pub fn writeSNBT(compound: collections.Compound, writer: anytype, format: SNBTFormat) !void {
+pub fn writeSNBT(compound: collections.Compound, writer: anytype, format: SNBTFormat) NbtError!void {
     // TODO: Implement different text formatting methods
     _ = format;
 
