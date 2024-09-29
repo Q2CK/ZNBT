@@ -173,22 +173,37 @@ pub const Compound = struct {
     /// Format: `{name1:123,name2:"sometext1",name3:{subname1:456,subname2:"sometext2"}}`
     ///
     /// https://minecraft.fandom.com/wiki/NBT_format#SNBT_format
-    pub fn snbt(self: Self, alloc: Allocator) ![]const u8 {
-        var result = std.ArrayList(u8).init(alloc);
-        defer result.deinit();
-
-        try result.append('{');
+    pub fn snbt(self: Self, writer: anytype) !void {
+        _ = try writer.write("{");
 
         var it = self.tags.iterator();
+        var is_first_tag = true;
         while (it.next()) |entry| {
-            try result.appendSlice(entry.key_ptr.*);
-            try result.append(':');
-            const result_writer = result.writer();
-            try std.fmt.format(result_writer, "{d}", .{entry.value_ptr.*.Int});
+            if (!is_first_tag) {
+                _ = try writer.write(",");
+            }
+            _ = try writer.write(entry.key_ptr.*);
+            _ = try writer.write(":");
+            const tag = entry.value_ptr.*;
+            const active_tag = std.meta.activeTag(entry.value_ptr.*);
+            switch (active_tag) {
+                .Int => {
+                    _ = try writer.print("{d}", .{entry.value_ptr.*.Int});
+                },
+                .String => {
+                    _ = try writer.print("\"{s}\"", .{entry.value_ptr.*.String});
+                },
+                .Compound => {
+                    try tag.Compound.snbt(writer);
+                },
+                else => {
+                    std.debug.panic("Unsupported tag type: {s}", .{@tagName(active_tag)});
+                },
+            }
+
+            is_first_tag = false;
         }
 
-        try result.append('}');
-
-        return try result.toOwnedSlice();
+        _ = try writer.write("}");
     }
 };
