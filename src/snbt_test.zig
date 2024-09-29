@@ -87,11 +87,40 @@ test "multiline list" {
     try test_snbt(&root, expected, SNBTFormat.MultiLine);
 }
 
+test "multiline list of compounds" {
+    var root = znbt.collections.Compound.init(std.testing.allocator);
+    defer root.deinit();
+    var list = znbt.collections.List.init(std.testing.allocator, .Compound);
+    var compound1 = znbt.collections.Compound.init(std.testing.allocator); 
+    try compound1.put("a", @as(i32, 42));
+    var compound2 = znbt.collections.Compound.init(std.testing.allocator); 
+    try compound2.put("b", @as([]const u8, "str"));
+    try compound2.put("c", @as([]const u8, "str2"));
+    try list.append(compound1);
+    try list.append(compound2);
+    try root.put("list", list);
+
+    const expected =
+        \\{
+        \\    list: [
+        \\        {
+        \\            a: 42
+        \\        },
+        \\        {
+        \\            b: "str",
+        \\            c: "str2"
+        \\        }
+        \\    ]
+        \\}
+    ;
+    try test_snbt(&root, expected, SNBTFormat.MultiLine);
+}
+
 fn test_snbt(root: *znbt.collections.Compound, expected: []const u8, format: SNBTFormat) !void {
     var actual_arraylist = std.ArrayList(u8).init(std.testing.allocator);
     try znbt.io.writeSNBT(root.*, actual_arraylist.writer(), format);
     const actual = try actual_arraylist.toOwnedSlice();
-    // std.debug.print("{s}\n", .{actual}); // Helps see the pretty printed value i nconsole
+    std.debug.print("{s}\n", .{actual}); // Helps see the pretty printed value i nconsole
     try std.testing.expectEqualSlices(u8, expected, actual);
     std.testing.allocator.free(actual);
 }
