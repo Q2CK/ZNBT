@@ -2,20 +2,18 @@ const std = @import("std");
 const znbt = @import("znbt.zig");
 const SNBTFormat = znbt.io.SNBTFormat;
 
-test "compact integer" {
+test "compact integer" { try testCaseCompact("k", @as(i32, 42), "{k:42}"); }
+test "compact string" { try testCaseCompact("k", @as([]const u8, "Hello, SNBT!"), "{k:\"Hello, SNBT!\"}"); }
+test "compact byte array" { try testCaseCompact("k", @as([]const i8, &[_]i8{-1, 2, 3}), "{k:[-1b,2b,3b]}"); }
+test "compact int array" { try testCaseCompact("k", @as([]const i32, &[_]i32{-1, 2, 3}), "{k:[-1,2,3]}"); }
+test "compact long array" { try testCaseCompact("k", @as([]const i64, &[_]i64{-1, 2, 3}), "{k:[-1l,2l,3l]}"); }
+
+fn testCaseCompact(key: []const u8, value: anytype, expected: []const u8) !void {
     var root = znbt.collections.Compound.init(std.testing.allocator);
     defer root.deinit();
-    try root.put("a", @as(i32, 42));
 
-    try test_snbt(&root, "{a:42}", SNBTFormat.Compact);
-}
-
-test "compact string" {
-    var root = znbt.collections.Compound.init(std.testing.allocator);
-    defer root.deinit();
-    try root.put("b", @as([]const u8, "Hello, SNBT!"));
-
-    try test_snbt(&root, "{b:\"Hello, SNBT!\"}", SNBTFormat.Compact);
+    try root.put(key, value);
+    try testSnbt(&root, expected, SNBTFormat.Compact);
 }
 
 test "compact nested compound" {
@@ -25,37 +23,7 @@ test "compact nested compound" {
     try nested_compound.put("nested_key", @as([]const u8, "nested_value"));
     try root.put("c", nested_compound);
 
-    try test_snbt(&root, "{c:{nested_key:\"nested_value\"}}", SNBTFormat.Compact);
-}
-
-test "compact byte array" {
-    var root = znbt.collections.Compound.init(std.testing.allocator);
-    defer root.deinit();
-    const array: [3]i8 = .{-1, 2, 3};
-    try root.put("key", @as([]const i8, &array));
-
-    const expected = "{key:[-1b,2b,3b]}";
-    try test_snbt(&root, expected, SNBTFormat.Compact);
-}
-
-test "compact int array" {
-    var root = znbt.collections.Compound.init(std.testing.allocator);
-    defer root.deinit();
-    const array: [3]i32 = .{-1, 2, 3};
-    try root.put("key", @as([]const i32, &array));
-
-    const expected = "{key:[-1,2,3]}";
-    try test_snbt(&root, expected, SNBTFormat.Compact);
-}
-
-test "compact long array" {
-    var root = znbt.collections.Compound.init(std.testing.allocator);
-    defer root.deinit();
-    const array: [3]i64 = .{-123456567, 0xFFFFFFFF, 3};
-    try root.put("key", @as([]const i64, &array));
-
-    const expected = "{key:[-123456567l,4294967295l,3l]}";
-    try test_snbt(&root, expected, SNBTFormat.Compact);
+    try testSnbt(&root, "{c:{nested_key:\"nested_value\"}}", SNBTFormat.Compact);
 }
 
 test "compact multiple tags" {
@@ -64,7 +32,7 @@ test "compact multiple tags" {
     try root.put("a", @as(i32, 1));
     try root.put("b", @as([]const u8, "str"));
 
-    try test_snbt(&root, "{b:\"str\",a:1}", SNBTFormat.Compact);
+    try testSnbt(&root, "{b:\"str\",a:1}", SNBTFormat.Compact);
 }
 
 test "compact list" {
@@ -76,7 +44,7 @@ test "compact list" {
     try list.append(@as(i32, 30));
     try root.put("d", list);
 
-    try test_snbt(&root, "{d:[10,20,30]}", SNBTFormat.Compact);
+    try testSnbt(&root, "{d:[10,20,30]}", SNBTFormat.Compact);
 }
 
 test "multiline nested" {
@@ -93,7 +61,7 @@ test "multiline nested" {
         \\    }
         \\}
     ;
-    try test_snbt(&root, expected, SNBTFormat.MultiLine);
+    try testSnbt(&root, expected, SNBTFormat.MultiLine);
 }
 
 test "multiline list" {
@@ -114,7 +82,7 @@ test "multiline list" {
         \\    ]
         \\}
     ;
-    try test_snbt(&root, expected, SNBTFormat.MultiLine);
+    try testSnbt(&root, expected, SNBTFormat.MultiLine);
 }
 
 test "multiline list of compounds" {
@@ -143,7 +111,7 @@ test "multiline list of compounds" {
         \\    ]
         \\}
     ;
-    try test_snbt(&root, expected, SNBTFormat.MultiLine);
+    try testSnbt(&root, expected, SNBTFormat.MultiLine);
 }
 
 test "multiline long array" {
@@ -164,7 +132,7 @@ test "multiline long array" {
         \\    ]
         \\}
     ;
-    try test_snbt(&root, expected, SNBTFormat.MultiLine);
+    try testSnbt(&root, expected, SNBTFormat.MultiLine);
 }
 
 test "multiline byte" {
@@ -177,7 +145,7 @@ test "multiline byte" {
         \\    a: 64b
         \\}
     ;
-    try test_snbt(&root, expected, SNBTFormat.MultiLine);
+    try testSnbt(&root, expected, SNBTFormat.MultiLine);
 }
 
 test "multiline short" {
@@ -190,7 +158,7 @@ test "multiline short" {
         \\    a: 64s
         \\}
     ;
-    try test_snbt(&root, expected, SNBTFormat.MultiLine);
+    try testSnbt(&root, expected, SNBTFormat.MultiLine);
 }
 
 test "multiline int" {
@@ -203,7 +171,7 @@ test "multiline int" {
         \\    a: 64
         \\}
     ;
-    try test_snbt(&root, expected, SNBTFormat.MultiLine);
+    try testSnbt(&root, expected, SNBTFormat.MultiLine);
 }
 
 test "multiline byte array" {
@@ -221,7 +189,7 @@ test "multiline byte array" {
         \\    ]
         \\}
     ;
-    try test_snbt(&root, expected, SNBTFormat.MultiLine);
+    try testSnbt(&root, expected, SNBTFormat.MultiLine);
 }
 
 test "multiline int array" {
@@ -239,10 +207,10 @@ test "multiline int array" {
         \\    ]
         \\}
     ;
-    try test_snbt(&root, expected, SNBTFormat.MultiLine);
+    try testSnbt(&root, expected, SNBTFormat.MultiLine);
 }
 
-fn test_snbt(root: *znbt.collections.Compound, expected: []const u8, format: SNBTFormat) !void {
+fn testSnbt(root: *znbt.collections.Compound, expected: []const u8, format: SNBTFormat) !void {
     var actual_arraylist = std.ArrayList(u8).init(std.testing.allocator);
     try znbt.io.writeSNBT(root.*, actual_arraylist.writer(), format);
     const actual = try actual_arraylist.toOwnedSlice();
