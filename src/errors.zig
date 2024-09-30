@@ -23,5 +23,6 @@ pub const FileError = error {
     OperationAborted,
     NotOpenForWriting,
     LockViolation,
-    ConnectionResetByPeer
+    ConnectionResetByPeer,
+    UnfinishedBits
 };

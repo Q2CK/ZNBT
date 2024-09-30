@@ -110,13 +110,12 @@ pub const List = struct {
 
     pub fn snbt(self: Self, writer: anytype) NbtError!void {
         _ = try writer.write("[");
-        var is_first_tag = true;
-        for (self.tags.items) |tag| {
-            if (!is_first_tag) {
+        for (self.tags.items, 0..) |tag, i| {
+            _ = try tag.snbt(writer);
+            const is_last_tag = self.tags.items.len - 1 == i;
+            if (!is_last_tag) {
                 _ = try writer.write(",");
             }
-            _ = try tag.snbt(writer);
-            is_first_tag = false;
         }
         _ = try writer.write("]");
     }
@@ -124,15 +123,14 @@ pub const List = struct {
     pub fn snbtMultiline(self: Self, writer: anytype, indent: usize) NbtError!void {
         _ = try writer.write("[");
 
-        var is_first_tag = true;
-        for (self.tags.items) |tag| {
-            if (!is_first_tag) {
-                _ = try writer.write(",");
-            }
+        for (self.tags.items, 0..) |tag, i| {
             _ = try writer.write("\n",);
             _ = try writer.writeByteNTimes(' ', indent + INDENT_SIZE_IN_SPACES);
             try tag.snbtMultiline(writer, indent + INDENT_SIZE_IN_SPACES);
-            is_first_tag = false;
+            const is_last_tag = self.tags.items.len - 1 == i;
+            if (!is_last_tag) {
+                _ = try writer.write(",");
+            }
         }
 
         _ = try writer.write("\n");
@@ -212,17 +210,17 @@ pub const Compound = struct {
         _ = try writer.write("{");
 
         var it = self.tags.iterator();
-        var is_first_tag = true;
+        var i: usize = 0;
         while (it.next()) |entry| {
-            if (!is_first_tag) {
-                _ = try writer.write(",");
-            }
             _ = try writer.write(entry.key_ptr.*);
             _ = try writer.write(":");
             const tag = entry.value_ptr.*;
             try tag.snbt(writer);
-
-            is_first_tag = false;
+            const is_last_tag = self.tags.count() - 1 == i;
+            if (!is_last_tag) {
+                _ = try writer.write(",");
+            }
+            i += 1;
         }
 
         _ = try writer.write("}");
