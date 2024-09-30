@@ -2,7 +2,9 @@ const std = @import("std");
 const NbtError = @import("errors.zig").NbtError;
 
 const collections = @import("collections.zig");
-const writeArray = @import("snbt.zig").writeArray;
+const snbt_import = @import("snbt.zig");
+const writeArrayMultiline = snbt_import.writeArrayMultiline;
+const writeArrayCompact = snbt_import.writeArrayCompact;
 
 const INDENT_SIZE_IN_SPACES = @import("constants.zig").INDENT_SIZE_IN_SPACES;
 
@@ -219,31 +221,21 @@ pub const Tag = union(TagType) {
         }
     }
 
-    pub fn snbt(self: Self, writer: anytype) NbtError!void {
+    pub fn snbtCompact(self: Self, writer: anytype) NbtError!void {
         switch (self) {
-            .Int => |value| {
-                _ = try writer.print("{d}", .{value});
-            },
-            .String => |value| {
-                _ = try writer.print("\"{s}\"", .{value});
-            },
-            .Compound => |value| {
-                try value.snbt(writer);
-            },
-            .List => |value| {
-                try value.snbt(writer);  
-            },
-            .LongArray => |value| {
-                _ = try writer.write("[");
-                for (value) |item| {
-                    _ = try writer.print("{d}", .{item});
-                    _ = try writer.write(",");
-                }
-                _ = try writer.write("]");
-            },
-            else => |value| {
-                std.debug.panic("Unimplemented tag type: {s}", .{@tagName(value)});
-            },
+            .End => {},
+            .Byte => |value| _ = try writer.print("{d}b", .{value}),
+            .Short => |value| _ = try writer.print("{d}s", .{value}),
+            .Int => |value| _ = try writer.print("{d}", .{value}),
+            .Long => |value| _ = try writer.print("{d}l", .{value}),
+            .Double => |value| _ = try writer.print("{d:.16}d", .{value}),
+            .Float => |value| _ = try writer.print("{d:.16}f", .{value}),
+            .String => |value| _ = try writer.print("\"{s}\"", .{value}),
+            .Compound => |value| try value.snbtCompact(writer),
+            .List => |value| try value.snbt(writer),
+            .ByteArray => |value| try writeArrayCompact(i8, value, writer, 'b'),
+            .IntArray => |value| try writeArrayCompact(i32, value, writer, null),
+            .LongArray => |value| try writeArrayCompact(i64, value, writer, 'l'), 
         }
     }
 
@@ -259,9 +251,9 @@ pub const Tag = union(TagType) {
             .String => |value| _ = try writer.print("\"{s}\"", .{value}),
             .Compound => |value| try value.snbtMultiline(writer, indent),
             .List => |value| try value.snbtMultiline(writer, indent),
-            .ByteArray => |value| try writeArray(i8, value, writer, indent, 'b'),
-            .IntArray => |value| try writeArray(i32, value, writer, indent, null),
-            .LongArray => |value| try writeArray(i64, value, writer, indent, 'l'),
+            .ByteArray => |value| try writeArrayMultiline(i8, value, writer, indent, 'b'),
+            .IntArray => |value| try writeArrayMultiline(i32, value, writer, indent, null),
+            .LongArray => |value| try writeArrayMultiline(i64, value, writer, indent, 'l'),
         }
     }
 };

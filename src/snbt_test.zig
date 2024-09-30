@@ -31,9 +31,31 @@ test "compact nested compound" {
 test "compact byte array" {
     var root = znbt.collections.Compound.init(std.testing.allocator);
     defer root.deinit();
-    try root.put("bytearray", @as([]const u8, "qwerty"));
-    
-    try test_snbt(&root, "{bytearray:\"qwerty\"}", SNBTFormat.Compact);
+    const array: [3]i8 = .{-1, 2, 3};
+    try root.put("key", @as([]const i8, &array));
+
+    const expected = "{key:[-1b,2b,3b]}";
+    try test_snbt(&root, expected, SNBTFormat.Compact);
+}
+
+test "compact int array" {
+    var root = znbt.collections.Compound.init(std.testing.allocator);
+    defer root.deinit();
+    const array: [3]i32 = .{-1, 2, 3};
+    try root.put("key", @as([]const i32, &array));
+
+    const expected = "{key:[-1,2,3]}";
+    try test_snbt(&root, expected, SNBTFormat.Compact);
+}
+
+test "compact long array" {
+    var root = znbt.collections.Compound.init(std.testing.allocator);
+    defer root.deinit();
+    const array: [3]i64 = .{-123456567, 0xFFFFFFFF, 3};
+    try root.put("key", @as([]const i64, &array));
+
+    const expected = "{key:[-123456567l,4294967295l,3l]}";
+    try test_snbt(&root, expected, SNBTFormat.Compact);
 }
 
 test "compact multiple tags" {

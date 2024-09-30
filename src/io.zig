@@ -81,7 +81,7 @@ pub fn readBin(alloc: std.mem.Allocator, path: []const u8) !collections.Compound
 /// Writes NBT data in SNBT format into the `writer`, using the given `compound` as the root tag.
 pub fn writeSNBT(compound: collections.Compound, writer: anytype, format: SNBTFormat) NbtError!void {
     switch (format) {
-        .Compact => try compound.snbt(writer),
+        .Compact => try compound.snbtCompact(writer),
         .MultiLine => try compound.snbtMultiline(writer, 0),
         else => std.debug.panic("SNBT Format {s} is not implemented.", .{@tagName(format)}),
     }

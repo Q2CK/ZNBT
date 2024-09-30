@@ -11,7 +11,7 @@ const listSnbtCompact = snbt_import.listSnbtCompact;
 const listSnbtMultiline = snbt_import.listSnbtMultiline;
 const compoundSnbtCompact = snbt_import.compoundSnbtCompact;
 const compoundSnbtMultiline = snbt_import.compoundSnbtMultiline;
-const writeArray = snbt_import.writeArray;
+const writeArrayMultiline = snbt_import.writeArrayMultiline;
 
 const constants_import = @import("constants.zig");
 const INDENT_SIZE_IN_SPACES = constants_import.INDENT_SIZE_IN_SPACES;
@@ -191,7 +191,7 @@ pub const Compound = struct {
     /// Format: `{name1:123,name2:"sometext1",name3:{subname1:456,subname2:"sometext2"}}`
     ///
     /// https://minecraft.fandom.com/wiki/NBT_format#SNBT_format
-    pub fn snbt(self: Self, writer: anytype) NbtError!void {
+    pub fn snbtCompact(self: Self, writer: anytype) NbtError!void {
         try compoundSnbtCompact(self.tags, writer);
     }
 
