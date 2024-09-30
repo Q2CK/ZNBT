@@ -6,6 +6,13 @@ const tag_import = @import("tag.zig");
 const Tag = tag_import.Tag;
 const TagType = tag_import.TagType;
 
+const snbt_import = @import("snbt.zig");
+const listSnbtCompact = snbt_import.listSnbtCompact;
+const listSnbtMultiline = snbt_import.listSnbtMultiline;
+const compoundSnbtCompact = snbt_import.compoundSnbtCompact;
+const compoundSnbtMultiline = snbt_import.compoundSnbtMultiline;
+const writeArray = snbt_import.writeArray;
+
 const constants_import = @import("constants.zig");
 const INDENT_SIZE_IN_SPACES = constants_import.INDENT_SIZE_IN_SPACES;
 
@@ -109,33 +116,11 @@ pub const List = struct {
     }
 
     pub fn snbt(self: Self, writer: anytype) NbtError!void {
-        _ = try writer.write("[");
-        for (self.tags.items, 0..) |tag, i| {
-            _ = try tag.snbt(writer);
-            const is_last_tag = self.tags.items.len - 1 == i;
-            if (!is_last_tag) {
-                _ = try writer.write(",");
-            }
-        }
-        _ = try writer.write("]");
+        try listSnbtCompact(self.tags, writer);
     }
 
     pub fn snbtMultiline(self: Self, writer: anytype, indent: usize) NbtError!void {
-        _ = try writer.write("[");
-
-        for (self.tags.items, 0..) |tag, i| {
-            _ = try writer.write("\n",);
-            _ = try writer.writeByteNTimes(' ', indent + INDENT_SIZE_IN_SPACES);
-            try tag.snbtMultiline(writer, indent + INDENT_SIZE_IN_SPACES);
-            const is_last_tag = self.tags.items.len - 1 == i;
-            if (!is_last_tag) {
-                _ = try writer.write(",");
-            }
-        }
-
-        _ = try writer.write("\n");
-        _ = try writer.writeByteNTimes(' ', indent);
-        _ = try writer.write("]");
+        try listSnbtMultiline(self.tags, writer, indent);
     }
 };
 
@@ -207,47 +192,10 @@ pub const Compound = struct {
     ///
     /// https://minecraft.fandom.com/wiki/NBT_format#SNBT_format
     pub fn snbt(self: Self, writer: anytype) NbtError!void {
-        _ = try writer.write("{");
-
-        var it = self.tags.iterator();
-        var i: usize = 0;
-        while (it.next()) |entry| {
-            _ = try writer.write(entry.key_ptr.*);
-            _ = try writer.write(":");
-            const tag = entry.value_ptr.*;
-            try tag.snbt(writer);
-            const is_last_tag = self.tags.count() - 1 == i;
-            if (!is_last_tag) {
-                _ = try writer.write(",");
-            }
-            i += 1;
-        }
-
-        _ = try writer.write("}");
+        try compoundSnbtCompact(self.tags, writer);
     }
 
     pub fn snbtMultiline(self: Self, writer: anytype, indent: usize) NbtError!void {
-        _ = try writer.write("{");
-
-        var it = self.tags.iterator();
-        var i: i32 = 0;
-
-        while (it.next()) |entry| {
-            _ = try writer.write("\n");
-            _ = try writer.writeByteNTimes(' ', indent + INDENT_SIZE_IN_SPACES);
-            _ = try writer.write(entry.key_ptr.*);
-            _ = try writer.write(": ");
-            const tag = entry.value_ptr.*;
-            try tag.snbtMultiline(writer, indent + INDENT_SIZE_IN_SPACES);
-            const is_last_tag = i == self.tags.count() - 1;
-            if (!is_last_tag) {
-                _ = try writer.write(",");
-            }
-            i += 1;            
-        }
-
-        _ = try writer.write("\n");
-        _ = try writer.writeByteNTimes(' ', indent);
-        _ = try writer.write("}");
+       try compoundSnbtMultiline(self.tags, writer, indent);
     }
 };
