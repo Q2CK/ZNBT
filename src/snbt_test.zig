@@ -2,11 +2,16 @@ const std = @import("std");
 const znbt = @import("znbt.zig");
 const SNBTFormat = znbt.io.SNBTFormat;
 
+test "compact byte" { try testCaseCompact("k", @as(i8, 42), "{k:42b}"); }
+test "compact short" { try testCaseCompact("k", @as(i16, 42), "{k:42s}"); }
 test "compact integer" { try testCaseCompact("k", @as(i32, 42), "{k:42}"); }
+test "compact long" { try testCaseCompact("k", @as(i64, 42), "{k:42l}"); }
+test "compact float" { try testCaseCompact("k", @as(f32, 12.34), "{k:12.34f}"); }
+test "compact double" { try testCaseCompact("k", @as(f64, 12.34), "{k:12.34d}"); }
 test "compact string" { try testCaseCompact("k", @as([]const u8, "Hello, SNBT!"), "{k:\"Hello, SNBT!\"}"); }
-test "compact byte array" { try testCaseCompact("k", @as([]const i8, &[_]i8{-1, 2, 3}), "{k:[-1b,2b,3b]}"); }
-test "compact int array" { try testCaseCompact("k", @as([]const i32, &[_]i32{-1, 2, 3}), "{k:[-1,2,3]}"); }
-test "compact long array" { try testCaseCompact("k", @as([]const i64, &[_]i64{-1, 2, 3}), "{k:[-1l,2l,3l]}"); }
+test "compact byte array" { try testCaseCompact("k", @as([]const i8, &[_]i8{-1, 2, 3}), "{k:[B;-1b,2b,3b]}"); }
+test "compact int array" { try testCaseCompact("k", @as([]const i32, &[_]i32{-1, 2, 3}), "{k:[I;-1,2,3]}"); }
+test "compact long array" { try testCaseCompact("k", @as([]const i64, &[_]i64{-1, 2, 3}), "{k:[L;-1l,2l,3l]}"); }
 
 fn testCaseCompact(key: []const u8, value: anytype, expected: []const u8) !void {
     var root = znbt.collections.Compound.init(std.testing.allocator);

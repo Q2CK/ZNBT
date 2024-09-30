@@ -9,6 +9,15 @@ const INDENT_SIZE_IN_SPACES = @import("constants.zig").INDENT_SIZE_IN_SPACES;
 
 pub fn listSnbtCompact(tags: std.ArrayList(Tag), writer: anytype) NbtError!void {
     _ = try writer.write("[");
+    const tag_type: TagType = tags.items[0];
+    switch (tag_type) {
+        .Byte => _ = try writer.print("B", .{}),
+        .Int => _ = try writer.print("I", .{}),
+        .Long => _ = try writer.print("L", .{}),
+        else => |value| std.debug.panic("Unknown tag_type {?} in list", .{value}),
+    }
+    _ = try writer.write(";");
+    
     for (tags.items, 0..) |tag, i| {
         _ = try tag.snbtCompact(writer);
         const is_last_tag = tags.items.len - 1 == i;
