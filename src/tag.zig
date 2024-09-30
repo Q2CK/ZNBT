@@ -246,49 +246,42 @@ pub const Tag = union(TagType) {
         }
     }
 
-
     pub fn snbtMultiline(self: Self, writer: anytype, indent: usize) NbtError!void {
         switch (self) {
-            .Short => |value| {
-                _ = try writer.print("{d}s", .{value});
-            },
-            .Int => |value| {
-                _ = try writer.print("{d}", .{value});
-            },
-            .Long => |value| {
-                _ = try writer.print("{d}l", .{value});
-            },
-            .Double => |value| {
-                _ = try writer.print("{d:.16}f", .{value});
-            },
-            .String => |value| {
-                _ = try writer.print("\"{s}\"", .{value});
-            },
-            .Compound => |value| {
-                try value.snbtMultiline(writer, indent);
-            },
-            .List => |value| {
-                try value.snbtMultiline(writer, indent);  
-            },
-            .LongArray => |value| {
-                _ = try writer.write("[");
-
-                for (value, 0..) |tag, i| {
-                    _ = try writer.writeByteNTimes(' ', indent + INDENT_SIZE_IN_SPACES);
-                    _ = try writer.print("{d}", .{tag});
-                    const is_last_tag = value.len - 1 == i;
-                    if (!is_last_tag) {
-                        _ = try writer.write(",");
-                    }
-                }
-
-                _ = try writer.write("\n");
-                _ = try writer.writeByteNTimes(' ', indent);
-                _ = try writer.write("]");
-            },
-            else => |value| {
-                std.debug.panic("Unimplemented tag type: {s}", .{@tagName(value)});
-            },
+            .End => {},
+            .Byte => |value| _ = try writer.print("{d}b", .{value}),
+            .Short => |value| _ = try writer.print("{d}s", .{value}),
+            .Int => |value| _ = try writer.print("{d}", .{value}),
+            .Long => |value| _ = try writer.print("{d}l", .{value}),
+            .Double => |value| _ = try writer.print("{d:.16}d", .{value}),
+            .Float => |value| _ = try writer.print("{d:.16}f", .{value}),
+            .String => |value| _ = try writer.print("\"{s}\"", .{value}),
+            .Compound => |value| try value.snbtMultiline(writer, indent),
+            .List => |value| try value.snbtMultiline(writer, indent),
+            .ByteArray => |value| try writeArray(i8, value, writer, indent, 'b'),
+            .IntArray => |value| try writeArray(i32, value, writer, indent, null),
+            .LongArray => |value| try writeArray(i64, value, writer, indent, 'l'),
         }
     }
 };
+
+fn writeArray(comptime T: type, array: []const T, writer: anytype, indent: usize, suffix: ?u8) NbtError!void {
+    _ = try writer.write("[");
+    for (array, 0..) |tag, i| {
+        _ = try writer.write("\n");
+        _ = try writer.writeByteNTimes(' ', indent + INDENT_SIZE_IN_SPACES);
+        if (suffix) |value| {
+            _ = try writer.print("{d}{c}", .{tag, value});
+        } else {
+            _ = try writer.print("{d}", .{tag});
+        }
+        const is_last_tag = array.len - 1 == i;
+        if (!is_last_tag) {
+            _ = try writer.write(",");
+        }
+    }
+
+    _ = try writer.write("\n");
+    _ = try writer.writeByteNTimes(' ', indent);
+    _ = try writer.write("]");
+}
