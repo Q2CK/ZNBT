@@ -116,6 +116,27 @@ test "multiline list of compounds" {
     try test_snbt(&root, expected, SNBTFormat.MultiLine);
 }
 
+test "multiline long array" {
+    var root = znbt.collections.Compound.init(std.testing.allocator);
+    defer root.deinit();
+    var longArray = znbt.collections.List.init(std.testing.allocator, .Long);
+    try longArray.append(@as(i64, 123));
+    try longArray.append(@as(i64, 456));
+    try longArray.append(@as(i64, 789));
+    try root.put("longArray", longArray);
+
+    const expected =
+        \\{
+        \\    longArray: [
+        \\        123l,
+        \\        456l,
+        \\        789l
+        \\    ]
+        \\}
+    ;
+    try test_snbt(&root, expected, SNBTFormat.MultiLine);
+}
+
 fn test_snbt(root: *znbt.collections.Compound, expected: []const u8, format: SNBTFormat) !void {
     var actual_arraylist = std.ArrayList(u8).init(std.testing.allocator);
     try znbt.io.writeSNBT(root.*, actual_arraylist.writer(), format);

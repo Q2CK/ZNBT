@@ -3,6 +3,8 @@ const NbtError = @import("errors.zig").NbtError;
 
 const collections = @import("collections.zig");
 
+const INDENT_SIZE_IN_SPACES = @import("constants.zig").INDENT_SIZE_IN_SPACES;
+
 pub const TagType = enum(u8) {
     End = 0,
 
@@ -230,16 +232,34 @@ pub const Tag = union(TagType) {
             .List => |value| {
                 try value.snbt(writer);  
             },
+            .LongArray => |value| {
+                _ = try writer.write("[");
+                for (value) |item| {
+                    _ = try writer.print("{d}", .{item});
+                    _ = try writer.write(",");
+                }
+                _ = try writer.write("]");
+            },
             else => |value| {
                 std.debug.panic("Unimplemented tag type: {s}", .{@tagName(value)});
             },
         }
     }
 
+
     pub fn snbtMultiline(self: Self, writer: anytype, indent: usize) NbtError!void {
         switch (self) {
+            .Short => |value| {
+                _ = try writer.print("{d}s", .{value});
+            },
             .Int => |value| {
                 _ = try writer.print("{d}", .{value});
+            },
+            .Long => |value| {
+                _ = try writer.print("{d}l", .{value});
+            },
+            .Double => |value| {
+                _ = try writer.print("{d:.16}f", .{value});
             },
             .String => |value| {
                 _ = try writer.print("\"{s}\"", .{value});
@@ -249,6 +269,22 @@ pub const Tag = union(TagType) {
             },
             .List => |value| {
                 try value.snbtMultiline(writer, indent);  
+            },
+            .LongArray => |value| {
+                _ = try writer.write("[");
+
+                for (value, 0..) |tag, i| {
+                    _ = try writer.writeByteNTimes(' ', indent + INDENT_SIZE_IN_SPACES);
+                    _ = try writer.print("{d}", .{tag});
+                    const is_last_tag = value.len - 1 == i;
+                    if (!is_last_tag) {
+                        _ = try writer.write(",");
+                    }
+                }
+
+                _ = try writer.write("\n");
+                _ = try writer.writeByteNTimes(' ', indent);
+                _ = try writer.write("]");
             },
             else => |value| {
                 std.debug.panic("Unimplemented tag type: {s}", .{@tagName(value)});
