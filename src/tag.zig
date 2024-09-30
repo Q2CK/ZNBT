@@ -233,9 +233,9 @@ pub const Tag = union(TagType) {
             .String => |value| _ = try writer.print("\"{s}\"", .{value}),
             .Compound => |value| try value.snbtCompact(writer),
             .List => |value| try value.snbt(writer),
-            .ByteArray => |value| try writeArrayCompact(i8, value, writer, 'b'),
-            .IntArray => |value| try writeArrayCompact(i32, value, writer, null),
-            .LongArray => |value| try writeArrayCompact(i64, value, writer, 'l'), 
+            .ByteArray => |value| try writeArrayCompact(i8, value, writer, 'B', 'b'),
+            .IntArray => |value| try writeArrayCompact(i32, value, writer, 'I', null),
+            .LongArray => |value| try writeArrayCompact(i64, value, writer, 'L', 'l'), 
         }
     }
 
