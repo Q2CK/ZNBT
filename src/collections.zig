@@ -232,26 +232,23 @@ pub const Compound = struct {
         _ = try writer.write("{");
 
         var it = self.tags.iterator();
-        var is_last_tag = false;
         var i: i32 = 0;
 
         while (it.next()) |entry| {
-            if (i == self.tags.count() - 1) {
-                is_last_tag = true;
-            }
-            _ = try writer.write("$\n$");
+            _ = try writer.write("\n");
             _ = try writer.writeByteNTimes(' ', indent + INDENT_SIZE_IN_SPACES);
             _ = try writer.write(entry.key_ptr.*);
             _ = try writer.write(": ");
             const tag = entry.value_ptr.*;
             try tag.snbtMultiline(writer, indent + INDENT_SIZE_IN_SPACES);
+            const is_last_tag = i == self.tags.count() - 1;
             if (!is_last_tag) {
                 _ = try writer.write(",");
             }
-            _ = try writer.write("\n");
             i += 1;            
         }
 
+        _ = try writer.write("\n");
         _ = try writer.writeByteNTimes(' ', indent);
         _ = try writer.write("}");
     }

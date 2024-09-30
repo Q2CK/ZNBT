@@ -50,4 +50,8 @@ test "example" {
     }
 
     std.debug.print("\n", .{});
+
+    // const file2 = try std.fs.cwd().createFile("data/example.snbt", .{});
+    // const file2_writer = file2.writer();
+    // try znbt.io.writeSNBT(root, file2_writer, znbt.io.SNBTFormat.MultiLine);
 }
