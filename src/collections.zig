@@ -6,6 +6,16 @@ const tag_import = @import("tag.zig");
 const Tag = tag_import.Tag;
 const TagType = tag_import.TagType;
 
+const snbt_import = @import("snbt.zig");
+const listSnbtCompact = snbt_import.listSnbtCompact;
+const listSnbtMultiline = snbt_import.listSnbtMultiline;
+const compoundSnbtCompact = snbt_import.compoundSnbtCompact;
+const compoundSnbtMultiline = snbt_import.compoundSnbtMultiline;
+const writeArrayMultiline = snbt_import.writeArrayMultiline;
+
+const constants_import = @import("constants.zig");
+const INDENT_SIZE_IN_SPACES = constants_import.INDENT_SIZE_IN_SPACES;
+
 /// List of unnamed NBT tags of the same type, an NBT-compatible
 /// wrapper around `std.ArrayList(Tag)`.
 ///
@@ -106,16 +116,11 @@ pub const List = struct {
     }
 
     pub fn snbt(self: Self, writer: anytype) NbtError!void {
-        _ = try writer.write("[");
-        var is_first_tag = true;
-        for (self.tags.items) |tag| {
-            if (!is_first_tag) {
-                _ = try writer.write(",");
-            }
-            _ = try tag.snbt(writer);
-            is_first_tag = false;
-        }
-        _ = try writer.write("]");
+        try listSnbtCompact(self.tags, writer);
+    }
+
+    pub fn snbtMultiline(self: Self, writer: anytype, indent: usize) NbtError!void {
+        try listSnbtMultiline(self.tags, writer, indent);
     }
 };
 
@@ -186,60 +191,11 @@ pub const Compound = struct {
     /// Format: `{name1:123,name2:"sometext1",name3:{subname1:456,subname2:"sometext2"}}`
     ///
     /// https://minecraft.fandom.com/wiki/NBT_format#SNBT_format
-    pub fn snbt(self: Self, writer: anytype) NbtError!void {
-        _ = try writer.write("{");
-
-        var it = self.tags.iterator();
-        var is_first_tag = true;
-        while (it.next()) |entry| {
-            if (!is_first_tag) {
-                _ = try writer.write(",");
-            }
-            _ = try writer.write(entry.key_ptr.*);
-            _ = try writer.write(":");
-            const tag = entry.value_ptr.*;
-            try tag.snbt(writer);
-
-            is_first_tag = false;
-        }
-
-        _ = try writer.write("}");
+    pub fn snbtCompact(self: Self, writer: anytype) NbtError!void {
+        try compoundSnbtCompact(self.tags, writer);
     }
 
-    /// TODO: Implement
-    pub fn snbtPretty(self: Self, writer: anytype) NbtError!void {
-        _ = try writer.write("{");
-
-        var it = self.tags.iterator();
-        var is_first_tag = true;
-        const indent = 4;
-        while (it.next()) |entry| {
-            if (!is_first_tag) {
-                _ = try writer.write(",");
-            }
-            try writer.writeByteNTimes(' ', indent);
-            _ = try writer.write(entry.key_ptr.*);
-            _ = try writer.write(": ");
-            const tag = entry.value_ptr.*;
-            const active_tag: TagType = tag;
-            switch (active_tag) {
-                .Int => {
-                    _ = try writer.print("{d}", .{tag.Int});
-                },
-                .String => {
-                    _ = try writer.print("\"{s}\"", .{tag.String});
-                },
-                .Compound => {
-                    try tag.Compound.snbtPretty(writer);
-                },
-                else => {
-                    std.debug.panic("Unsupported tag type: {s}", .{@tagName(active_tag)});
-                },
-            }
-
-            is_first_tag = false;
-        }
-
-        _ = try writer.write("}");
+    pub fn snbtMultiline(self: Self, writer: anytype, indent: usize) NbtError!void {
+       try compoundSnbtMultiline(self.tags, writer, indent);
     }
 };

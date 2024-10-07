@@ -27,10 +27,7 @@ test "example" {
     try c2.put("string 1", str1);
     try c2.put("string 2", str2);
 
-    var a: i64 = 0;
-    a = 1;
-
-    var arr = [_]i64{a};
+    var arr = [_]i64{123455678990,756543453453453453,756756756756756};
 
     const array: []i64 = arr[0..];
 
@@ -50,4 +47,8 @@ test "example" {
     }
 
     std.debug.print("\n", .{});
+
+    const file2 = try std.fs.cwd().createFile("data/example.snbt", .{});
+    const file2_writer = file2.writer();
+    try znbt.io.writeSNBT(root, file2_writer, znbt.io.SNBTFormat.MultiLine);
 }

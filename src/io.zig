@@ -8,6 +8,9 @@ const tag_import = @import("tag.zig");
 const Tag = tag_import.Tag;
 const TagType = tag_import.TagType;
 
+const constants_import = @import("constants.zig");
+const INDENT_SIZE_IN_SPACES = constants_import.INDENT_SIZE_IN_SPACES;
+
 /// Compression method for the final binary NBT data
 pub const Compression = enum { 
     None, Gzip, Zlib 
@@ -77,8 +80,9 @@ pub fn readBin(alloc: std.mem.Allocator, path: []const u8) !collections.Compound
 
 /// Writes NBT data in SNBT format into the `writer`, using the given `compound` as the root tag.
 pub fn writeSNBT(compound: collections.Compound, writer: anytype, format: SNBTFormat) NbtError!void {
-    // TODO: Implement different text formatting methods
-    _ = format;
-
-    try compound.snbt(writer);
+    switch (format) {
+        .Compact => try compound.snbtCompact(writer),
+        .MultiLine => try compound.snbtMultiline(writer, 0),
+        else => std.debug.panic("SNBT Format {s} is not implemented.", .{@tagName(format)}),
+    }
 }
