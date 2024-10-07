@@ -136,16 +136,19 @@ pub const Compound = struct {
     /// NBT tags contained in this Compound
     tags: std.StringHashMap(Tag),
 
+    alloc: Allocator,
+
     /// Initializes the Compound.
     pub fn init(alloc: Allocator) Self {
-        return Self{ .tags = std.StringHashMap(Tag).init(alloc) };
+        return Self{ .tags = std.StringHashMap(Tag).init(alloc), .alloc = alloc };
     }
 
-    /// Deinitializes the List, freeing the memory of the contained tags and itself.
+    /// Deinitializes the Compound, freeing the memory of the StringHashMap's keys, contained tags and itself.
     pub fn deinit(self: *Self) void {
-        var tags_iter = self.tags.valueIterator();
-        while (tags_iter.next()) |tag| {
-            tag.deinit();
+        var kv_iter = self.tags.iterator();
+        while (kv_iter.next()) |kv| {
+            kv.value_ptr.*.deinit();
+            self.alloc.free(kv.key_ptr.*);
         }
         self.tags.deinit();
     }
@@ -186,6 +189,53 @@ pub const Compound = struct {
         return self.tags.contains(name);
     }
 
+    pub fn fromBinRepr(alloc: Allocator, bin_slice: []const u8) NbtError!Compound {
+        var map = std.StringHashMap(Tag).init(alloc);
+
+        var tag: Tag = undefined;
+        var tag_type_u8 = std.mem.readInt(u8, &bin_slice[0], .big);
+        var tag_type: TagType = @enumFromInt(tag_type_u8);
+        var offset: u32 = 1;
+
+        while (tag_type != TagType.End) {
+            const tag_name_length = std.mem.readVarInt(u16, bin_slice[offset..offset+2], .big);
+            offset += 2;
+            const tag_name_end = offset + tag_name_length;
+            const tag_name = bin_slice[offset..tag_name_end];
+            offset += tag_name_length;
+
+            std.debug.print("\n", .{});
+            std.debug.print("tag_type: {?}\n", .{tag_type});
+            std.debug.print("tag_name_length: {d}\n", .{tag_name_length});
+            std.debug.print("tag_name: {s}\n", .{tag_name});
+
+            switch (tag_type) {
+                TagType.Byte => {
+                    const value = std.mem.readInt(i8, &bin_slice[offset], .big);
+                    tag = Tag.from(value);
+                    offset += 1;
+                },
+                TagType.Short => {
+                    const value = std.mem.readVarInt(i16, bin_slice[offset..offset+2], .big);
+                    tag = Tag.from(value);
+                    offset += 2;
+                },
+                else => {
+                    return NbtError.NotImplemented;
+                    // std.debug.panic("Not supported tag type {?}", .{tag_type});
+                },
+            }
+
+            const tag_name_copy = try alloc.dupe(u8, tag_name);
+            try map.put(tag_name_copy, tag);
+
+            tag_type_u8 = std.mem.readInt(u8, &bin_slice[offset], .big);
+            tag_type = @enumFromInt(tag_type_u8);
+        }
+
+        return Self{ .tags = map, .alloc = alloc };
+    }
+
     /// Returns string representation (SNBT) of this compound with all the nested values.
     ///
     /// Format: `{name1:123,name2:"sometext1",name3:{subname1:456,subname2:"sometext2"}}`
@@ -195,6 +245,32 @@ pub const Compound = struct {
         try compoundSnbtCompact(self.tags, writer);
     }
 
+    /// Returns multi-line human readable string representation (SNBT) of this compound with all the nested values.
+    /// 
+    /// Example format:
+    /// ```
+    /// {
+    ///     list: [
+    ///         {
+    ///             number1: 123,
+    ///             number2: 456,
+    ///             number3: 789
+    ///         },
+    ///         {
+    ///             string1: "str1",
+    ///             string2: "str2"
+    ///         },
+    ///         {
+    ///             array: [
+    ///                 1
+    ///             ],
+    ///             double: 12.34
+    ///         }
+    ///     ]
+    /// }
+    /// ```
+    ///
+    /// https://minecraft.fandom.com/wiki/NBT_format#SNBT_format
     pub fn snbtMultiline(self: Self, writer: anytype, indent: usize) NbtError!void {
        try compoundSnbtMultiline(self.tags, writer, indent);
     }

@@ -66,16 +66,30 @@ pub fn writeBin(alloc: std.mem.Allocator, name: []const u8, compound: collection
 }
 
 /// Reads binary NBT data from the file at `path` and returns the root compound as a `collections.Compound`.
-/// TODO: Implement this method and add tests
 pub fn readBin(alloc: std.mem.Allocator, path: []const u8) !collections.Compound {
     const file = try std.fs.cwd().openFile(path, .{});
     defer file.close();
 
-    const reader = file.reader();
-    const content = try reader.readAllAlloc(alloc, std.math.maxInt(usize));
-    defer alloc.free(content);
+    var array_list = std.ArrayList(u8).init(std.testing.allocator);
+    defer array_list.deinit();
 
-    return collections.Compound.init(alloc);
+    try std.compress.gzip.decompress(file.reader(), array_list.writer());
+
+    const bin_slice = try array_list.toOwnedSlice();
+    defer alloc.free(bin_slice);
+
+    const tag_type = std.mem.readInt(u8, &bin_slice[0], .big);
+    const tag_name_length = std.mem.readInt(u16, bin_slice[1..3], .big);
+    const tag_name_end = tag_name_length + 3;
+    const tag_name = bin_slice[3..tag_name_end];
+
+    std.debug.print("\n", .{});
+    std.debug.print("tag_type: {d}\n", .{tag_type});
+    std.debug.print("tag_name_length: {d}\n", .{tag_name_length});
+    std.debug.print("typeof tag_name_length: {?}\n", .{@TypeOf(tag_name_length)});
+    std.debug.print("tag_name: {s}\n", .{tag_name});
+
+    return try collections.Compound.fromBinRepr(alloc, bin_slice[tag_name_end..]);
 }
 
 /// Writes NBT data in SNBT format into the `writer`, using the given `compound` as the root tag.

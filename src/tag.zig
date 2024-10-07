@@ -251,9 +251,9 @@ pub const Tag = union(TagType) {
             .String => |value| _ = try writer.print("\"{s}\"", .{value}),
             .Compound => |value| try value.snbtMultiline(writer, indent),
             .List => |value| try value.snbtMultiline(writer, indent),
-            .ByteArray => |value| try writeArrayMultiline(i8, value, writer, indent, 'b'),
-            .IntArray => |value| try writeArrayMultiline(i32, value, writer, indent, null),
-            .LongArray => |value| try writeArrayMultiline(i64, value, writer, indent, 'l'),
+            .ByteArray => |value| try writeArrayMultiline(i8, value, writer, indent, 'B', 'b'),
+            .IntArray => |value| try writeArrayMultiline(i32, value, writer, indent, 'I', null),
+            .LongArray => |value| try writeArrayMultiline(i64, value, writer, indent, 'L', 'l'),
         }
     }
 };
