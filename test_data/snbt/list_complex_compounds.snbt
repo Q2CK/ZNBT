@@ -1,0 +1,20 @@
+{
+    list: [
+        {
+            number 2: 456s,
+            number 1: 123s,
+            number 3: 789s
+        },
+        {
+            string 1: "str1",
+            string 2: "str2"
+        },
+        {
+            array: [
+                L;
+                1l
+            ],
+            double: 12.3400000000000000d
+        }
+    ]
+}

@@ -215,6 +215,8 @@ test "multiline long array" {
     try testSnbt(&root, expected, SNBTFormat.MultiLine);
 }
 
+// TODO: Test multiline double, trim trailing zeros
+
 fn testSnbt(root: *znbt.collections.Compound, expected: []const u8, format: SNBTFormat) !void {
     var actual_arraylist = std.ArrayList(u8).init(std.testing.allocator);
     try znbt.io.writeSNBT(root.*, actual_arraylist.writer(), format);

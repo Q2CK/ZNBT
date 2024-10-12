@@ -143,7 +143,7 @@ pub const Compound = struct {
         return Self{ .tags = std.StringHashMap(Tag).init(alloc), .alloc = alloc };
     }
 
-    /// Deinitializes the Compound, freeing the memory of the StringHashMap's keys, contained tags and itself.
+    /// Deinitializes the `Compound`, freeing the memory of the `std.StringHashMap`'s keys, contained tags and itself.
     pub fn deinit(self: *Self) void {
         var kv_iter = self.tags.iterator();
         while (kv_iter.next()) |kv| {
@@ -159,7 +159,7 @@ pub const Compound = struct {
     /// Lack of a matching NBT type causes a compile error.
     ///
     /// Does NOT copy the memory referenced by `name`. The string referenced by `name`
-    /// must live at least as long as the entire `Compund`
+    /// must live at least as long as the entire `Compound`
     ///
     /// If the function fails, the tag will NOT be put, meaning its memory will NOT
     /// be managed by the Compound. The tag must then be freed accordingly by the caller.
@@ -167,7 +167,24 @@ pub const Compound = struct {
     /// do not contain dynamically allocated memory
     pub fn put(self: *Self, name: []const u8, value: anytype) NbtError!void {
         const new_tag = Tag.from(value);
-        try self.tags.put(name, new_tag);
+        try self.putTag(name, new_tag);
+    }
+
+    pub fn putTag(self: *Self, name: []const u8, tag: Tag) NbtError!void {
+        const name_copy = try self.alloc.dupe(u8, name);
+        try self.tags.put(name_copy, tag);
+    }
+
+    pub fn putByte(self: *Self, name: []const u8, value: i8) NbtError!void {
+        try self.put(name, value);
+    }
+
+    pub fn putShort(self: *Self, name: []const u8, value: i16) NbtError!void {
+        try self.put(name, value);
+    }
+
+    pub fn putByteArray(self: *Self, name: []const u8, value: []const i8) NbtError!void {
+        try self.put(name, value);
     }
 
     /// An NBT-compatible wrapper around the `remove` method on `std.StringHashMap`.
@@ -219,6 +236,16 @@ pub const Compound = struct {
                     const value = std.mem.readVarInt(i16, bin_slice[offset..offset+2], .big);
                     tag = Tag.from(value);
                     offset += 2;
+                },
+                TagType.Compound => {
+                    const value = try Compound.fromBinRepr(alloc, bin_slice[offset..]);
+                    tag = Tag.from(value);
+                    // offset += value_length;
+                },
+                TagType.List => {
+                    // const value = try List.fromBinRepr(alloc, bin_slice[offset..]);
+                    // tag = Tag.from(value);
+                    // offset += value_length;
                 },
                 else => {
                     return NbtError.NotImplemented;

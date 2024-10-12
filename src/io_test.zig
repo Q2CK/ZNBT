@@ -1,7 +1,73 @@
 const std = @import("std");
 const znbt = @import("znbt.zig");
 
-test "read" {
+test "read byte" {
+    const expected =
+        \\{
+        \\    byte: 1b
+        \\}
+    ;
+
+    try test_read("byte.nbt", expected);
+}
+
+test "read short" {
+    const expected =
+        \\{
+        \\    short: 256s
+        \\}
+    ;
+
+    try test_read("short.nbt", expected);
+}
+
+test "read list bytes" {
+    const expected =
+        \\{
+        \\    list: [
+        \\        1b,
+        \\        2b,
+        \\        3b
+        \\    ]
+        \\}
+    ;
+
+    try test_read("list_bytes.nbt", expected);
+}
+
+test "read list compounds" {
+    const expected = 
+        \\{
+        \\    list: [
+        \\        {
+        \\            byte: 1b
+        \\        },
+        \\        {
+        \\            byte: 2b
+        \\        }
+        \\    ]
+        \\}
+    ;
+
+    try test_read("list_compounds.nbt", expected);   
+}
+
+test "read byte array" {
+    const expected =
+        \\{
+        \\    byteArray: [
+        \\        B;
+        \\        1b,
+        \\        2b,
+        \\        3b
+        \\    ]
+        \\}
+    ;
+
+    try test_read("byte_array.nbt", expected);
+}
+
+test "read list complex compounds" {
     const expected = 
         \\{
         \\    list: [
@@ -17,52 +83,20 @@ test "read" {
         \\        {
         \\            array: [
         \\                L;
-        \\                1
+        \\                1l
         \\            ],
-        \\            double: 12.34
+        \\            double: 12.34d
         \\        }
         \\    ]
         \\}
     ;
 
-    try test_read("data/test_read/list.nbt", expected);   
+    try test_read("list_complex_compounds.nbt", expected);   
 }
 
-// test "write byte nbt" {
-//     var root = znbt.collections.Compound.init(std.testing.allocator);
-//     defer root.deinit();
-
-//     try root.put("byte", @as(i8, 56));
-
-//     const file = try std.fs.cwd().createFile("data/test_read/byte.nbt", .{});
-//     defer file.close();
-//     const file_writer = file.writer();
-
-//     try znbt.io.writeBin(std.testing.allocator, "test_read", root, file_writer, .Gzip);
-// }
-
-test "read byte" {
-    const expected =
-        \\{
-        \\    byte: 56b
-        \\}
-    ;
-
-    try test_read("data/test_read/byte.nbt", expected);
-}
-
-test "read short" {
-    const expected =
-        \\{
-        \\    short: 256s
-        \\}
-    ;
-
-    try test_read("data/test_read/short.nbt", expected);
-}
-
-fn test_read(input_path: []const u8, expected: []const u8) !void {
-    var actual_compound = try znbt.io.readBin(std.testing.allocator, input_path);
+fn test_read(input_filename: []const u8, expected: []const u8) !void {
+    const filepath = try std.fmt.allocPrint(std.testing.allocator, "test_data/gzip/{s}", .{input_filename});
+    var actual_compound = try znbt.io.readBin(std.testing.allocator, filepath);
     defer actual_compound.deinit();
     var actual_array_list = std.ArrayList(u8).init(std.testing.allocator);
     try znbt.io.writeSNBT(actual_compound, actual_array_list.writer(), .MultiLine);

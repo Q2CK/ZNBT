@@ -11,6 +11,8 @@ const TagType = tag_import.TagType;
 const constants_import = @import("constants.zig");
 const INDENT_SIZE_IN_SPACES = constants_import.INDENT_SIZE_IN_SPACES;
 
+const parser = @import("parse.zig");
+
 /// Compression method for the final binary NBT data
 pub const Compression = enum { 
     None, Gzip, Zlib 
@@ -89,7 +91,9 @@ pub fn readBin(alloc: std.mem.Allocator, path: []const u8) !collections.Compound
     std.debug.print("typeof tag_name_length: {?}\n", .{@TypeOf(tag_name_length)});
     std.debug.print("tag_name: {s}\n", .{tag_name});
 
-    return try collections.Compound.fromBinRepr(alloc, bin_slice[tag_name_end..]);
+    const parse_result = try parser.parseCompound(alloc, bin_slice[tag_name_end..]);
+
+    return parse_result.parsed_value;
 }
 
 /// Writes NBT data in SNBT format into the `writer`, using the given `compound` as the root tag.
