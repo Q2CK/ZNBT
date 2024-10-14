@@ -32,8 +32,6 @@ pub fn parseCompound(alloc: std.mem.Allocator, bin_slice: []const u8) NbtError!P
         const tag_name_length = std.mem.readVarInt(u16, bin_slice[offset..offset+2], .big);
         offset += 2;
         const tag_name_end = offset + tag_name_length;
-        std.debug.print("->offset: {d}\n", .{offset});
-        std.debug.print("->tag_name_length: {d}\n", .{tag_name_length});
         const tag_name = bin_slice[offset..tag_name_end];
         offset += tag_name_length;
 
@@ -127,7 +125,6 @@ pub fn parseCompound(alloc: std.mem.Allocator, bin_slice: []const u8) NbtError!P
 }
 
 pub fn parseList(alloc: std.mem.Allocator, bin_slice: []const u8) NbtError!ParseResult(List) {
-    // var tag: Tag = undefined;
     const tag_type_u8 = std.mem.readInt(u8, &bin_slice[0], .big);
     const tag_type: TagType = @enumFromInt(tag_type_u8);
     var offset: u32 = 1;
@@ -142,6 +139,7 @@ pub fn parseList(alloc: std.mem.Allocator, bin_slice: []const u8) NbtError!Parse
     std.debug.print("list_size: {d}\n", .{list_size});
 
     switch (tag_type) {
+        TagType.End => unreachable,
         TagType.Byte => {
             for (0..list_size) |_| {
                 const value = std.mem.readInt(i8, &bin_slice[offset], .big);
@@ -156,6 +154,66 @@ pub fn parseList(alloc: std.mem.Allocator, bin_slice: []const u8) NbtError!Parse
                 offset += 2;
             }
         },
+        TagType.Int => {
+            for (0..list_size) |_| {
+                const value = std.mem.readVarInt(i32, bin_slice[offset..offset+4], .big);
+                try result.append(value);
+                offset += 4;
+            }
+        },
+        TagType.Long => {
+            for (0..list_size) |_| {
+                const value = std.mem.readVarInt(i64, bin_slice[offset..offset+8], .big);
+                try result.append(value);
+                offset += 8;
+            }
+        },
+        TagType.Float => {
+            for (0..list_size) |_| {
+                const value = std.mem.readVarInt(u32, bin_slice[offset..offset+4], .big);
+                const float_ptr: *const f32 = @ptrCast(&value);
+                try result.append(float_ptr.*);
+                offset += 4;
+            }
+        },
+        TagType.Double => {
+            for (0..list_size) |_| {
+                const value = std.mem.readVarInt(u64, bin_slice[offset..offset+8], .big);
+                const double_ptr: *const f64 = @ptrCast(&value);
+                try result.append(double_ptr.*);
+                offset += 8;
+            }
+        },
+        TagType.ByteArray => {
+            for (0..list_size) |_| {
+                const parse_result = parseByteArray(bin_slice[offset..]);
+                try result.append(parse_result.parsed_value);
+                offset += parse_result.size_bytes;
+            }
+        },
+        TagType.String => {
+            for (0..list_size) |_| {
+                const parse_result = parseString(bin_slice[offset..]);
+                try result.append(parse_result.parsed_value);
+                offset += parse_result.size_bytes;
+            }
+        },
+        TagType.IntArray => {
+            for (0..list_size) |_| {
+                const parse_result = try parseIntArray(alloc, bin_slice[offset..]);
+                defer alloc.free(parse_result.parsed_value);
+                try result.append(parse_result.parsed_value);
+                offset += parse_result.size_bytes;
+            }
+        },
+        TagType.LongArray => {
+            for (0..list_size) |_| {
+                const parse_result = try parseLongArray(alloc, bin_slice[offset..]);
+                defer alloc.free(parse_result.parsed_value);
+                try result.append(parse_result.parsed_value);
+                offset += parse_result.size_bytes;
+            }
+        },
         TagType.Compound => {
             for (0..list_size) |_| {
                 const parse_result = try parseCompound(alloc, bin_slice[offset..]);
@@ -163,19 +221,17 @@ pub fn parseList(alloc: std.mem.Allocator, bin_slice: []const u8) NbtError!Parse
                 offset += parse_result.size_bytes;
             }
         },
-        // TagType.List => {
-        //     const parse_result = try parseList(alloc, bin_slice[offset..]);
-        //     tag = Tag.from(parse_result.parsed_value);
-        //     offset += parse_result.size_bytes;
-        // },
-        else => {
-            return NbtError.NotImplemented;
-            // std.debug.panic("Not supported tag type {?}", .{tag_type});
+        TagType.List => {
+            for (0..list_size) |_| {
+                const parse_result = try parseList(alloc, bin_slice[offset..]);
+                try result.append(parse_result.parsed_value);
+                offset += parse_result.size_bytes;
+            }
         },
     }
 
     return .{
-        .size_bytes = offset, // todo
+        .size_bytes = offset,
         .parsed_value = result,
     };
 }

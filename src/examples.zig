@@ -164,3 +164,18 @@ pub fn longArrayCompound(alloc: Allocator) NbtError!Compound {
     try result.putLongArray("longArray", &[_]i64{ 1, 2, 3 });
     return result;
 }
+
+pub fn listListsCompound(alloc: Allocator) NbtError!Compound {
+    var result = Compound.init(alloc);
+    var list = List.init(alloc, .List);
+    var nested_list1 = List.init(alloc, .Byte);
+    var nested_list2 = List.init(alloc, .Byte);
+    try nested_list1.append(@as(i8, 1));
+    try nested_list1.append(@as(i8, 2));
+    try nested_list2.append(@as(i8, 3));
+    try nested_list2.append(@as(i8, 4));
+    try list.append(nested_list1);
+    try list.append(nested_list2);
+    try result.put("list", list);
+    return result;
+}

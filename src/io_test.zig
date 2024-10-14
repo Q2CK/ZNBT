@@ -207,6 +207,25 @@ test "read list compounds" {
     try test_read("list_compounds.nbt", expected);   
 }
 
+test "read list lists" {
+    const expected =
+        \\{
+        \\    list: [
+        \\        [
+        \\            1b,
+        \\            2b
+        \\        ],
+        \\        [
+        \\            3b,
+        \\            4b
+        \\        ]
+        \\    ]
+        \\}
+    ;
+
+    try test_read("list_lists.nbt", expected);
+}
+
 // test "read list complex compounds" {
 //     const expected = 
 //         \\{
