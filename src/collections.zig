@@ -233,63 +233,6 @@ pub const Compound = struct {
         return self.tags.contains(name);
     }
 
-    // pub fn fromBinRepr(alloc: Allocator, bin_slice: []const u8) NbtError!Compound {
-    //     var map = std.StringHashMap(Tag).init(alloc);
-
-    //     var tag: Tag = undefined;
-    //     var tag_type_u8 = std.mem.readInt(u8, &bin_slice[0], .big);
-    //     var tag_type: TagType = @enumFromInt(tag_type_u8);
-    //     var offset: u32 = 1;
-
-    //     while (tag_type != TagType.End) {
-    //         const tag_name_length = std.mem.readVarInt(u16, bin_slice[offset..offset+2], .big);
-    //         offset += 2;
-    //         const tag_name_end = offset + tag_name_length;
-    //         const tag_name = bin_slice[offset..tag_name_end];
-    //         offset += tag_name_length;
-
-    //         std.debug.print("\n", .{});
-    //         std.debug.print("tag_type: {?}\n", .{tag_type});
-    //         std.debug.print("tag_name_length: {d}\n", .{tag_name_length});
-    //         std.debug.print("tag_name: {s}\n", .{tag_name});
-
-    //         switch (tag_type) {
-    //             TagType.Byte => {
-    //                 const value = std.mem.readInt(i8, &bin_slice[offset], .big);
-    //                 tag = try Tag.from(alloc, value);
-    //                 offset += 1;
-    //             },
-    //             TagType.Short => {
-    //                 const value = std.mem.readVarInt(i16, bin_slice[offset..offset+2], .big);
-    //                 tag = try Tag.from(alloc, value);
-    //                 offset += 2;
-    //             },
-    //             TagType.Compound => {
-    //                 const value = try Compound.fromBinRepr(alloc, bin_slice[offset..]);
-    //                 tag = try Tag.from(alloc, value);
-    //                 // offset += value_length;
-    //             },
-    //             TagType.List => {
-    //                 // const value = try List.fromBinRepr(alloc, bin_slice[offset..]);
-    //                 // tag = Tag.from(value);
-    //                 // offset += value_length;
-    //             },
-    //             else => {
-    //                 return NbtError.NotImplemented;
-    //                 // std.debug.panic("Not supported tag type {?}", .{tag_type});
-    //             },
-    //         }
-
-    //         const tag_name_copy = try alloc.dupe(u8, tag_name);
-    //         try map.put(tag_name_copy, tag);
-
-    //         tag_type_u8 = std.mem.readInt(u8, &bin_slice[offset], .big);
-    //         tag_type = @enumFromInt(tag_type_u8);
-    //     }
-
-    //     return Self{ .tags = map, .alloc = alloc };
-    // }
-
     /// Returns string representation (SNBT) of this compound with all the nested values.
     ///
     /// Format: `{name1:123,name2:"sometext1",name3:{subname1:456,subname2:"sometext2"}}`

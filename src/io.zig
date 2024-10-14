@@ -9,6 +9,7 @@ const Tag = tag_import.Tag;
 const TagType = tag_import.TagType;
 
 const constants_import = @import("constants.zig");
+const ENABLE_DEBUG_PRINTS = constants_import.ENABLE_DEBUG_PRINTS;
 const INDENT_SIZE_IN_SPACES = constants_import.INDENT_SIZE_IN_SPACES;
 
 const parser = @import("parse.zig");
@@ -85,11 +86,13 @@ pub fn readBin(alloc: std.mem.Allocator, path: []const u8) !collections.Compound
     const tag_name_end = tag_name_length + 3;
     const tag_name = bin_slice[3..tag_name_end];
 
-    std.debug.print("\n", .{});
-    std.debug.print("tag_type: {d}\n", .{tag_type});
-    std.debug.print("tag_name_length: {d}\n", .{tag_name_length});
-    std.debug.print("typeof tag_name_length: {?}\n", .{@TypeOf(tag_name_length)});
-    std.debug.print("tag_name: {s}\n", .{tag_name});
+    if (ENABLE_DEBUG_PRINTS) {
+        std.debug.print("\n", .{});
+        std.debug.print("tag_type: {d}\n", .{tag_type});
+        std.debug.print("tag_name_length: {d}\n", .{tag_name_length});
+        std.debug.print("typeof tag_name_length: {?}\n", .{@TypeOf(tag_name_length)});
+        std.debug.print("tag_name: {s}\n", .{tag_name});
+    }
 
     const parse_result = try parser.parseCompound(alloc, bin_slice[tag_name_end..]);
 

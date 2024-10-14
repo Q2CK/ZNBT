@@ -5,7 +5,7 @@ const TagType = tag_import.TagType;
 
 const NbtError = @import("errors.zig").NbtError;
 const INDENT_SIZE_IN_SPACES = @import("constants.zig").INDENT_SIZE_IN_SPACES;
-
+const ENABLE_DEBUG_PRINTS = @import("constants.zig").ENABLE_DEBUG_PRINTS;
 
 pub fn listSnbtCompact(tags: std.ArrayList(Tag), writer: anytype) NbtError!void {
     _ = try writer.write("[");
@@ -61,7 +61,9 @@ pub fn compoundSnbtCompact(tags: std.StringHashMap(Tag), writer: anytype) NbtErr
 
 pub fn compoundSnbtMultiline(tags: std.StringHashMap(Tag), writer: anytype, indent: usize) NbtError!void {
     _ = try writer.write("{");
-    std.debug.print("tags count: {d}\n", .{tags.count()});
+    if (ENABLE_DEBUG_PRINTS) {
+        std.debug.print("tags count: {d}\n", .{tags.count()});
+    }
 
     var it = tags.iterator();
     var i: i32 = 0;
@@ -69,7 +71,9 @@ pub fn compoundSnbtMultiline(tags: std.StringHashMap(Tag), writer: anytype, inde
     while (it.next()) |entry| {
         _ = try writer.write("\n");
         _ = try writer.writeByteNTimes(' ', indent + INDENT_SIZE_IN_SPACES);
-        std.debug.print("entry key: {s}\n", .{entry.key_ptr.*});
+        if (ENABLE_DEBUG_PRINTS) {
+            std.debug.print("entry key: {s}\n", .{entry.key_ptr.*});
+        }
         _ = try writer.write(entry.key_ptr.*);
         _ = try writer.write(": ");
         const tag = entry.value_ptr.*;

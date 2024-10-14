@@ -1,6 +1,9 @@
 const std = @import("std");
 const builtin = @import("builtin");
 
+const constants_import = @import("constants.zig");
+const ENABLE_DEBUG_PRINTS = constants_import.ENABLE_DEBUG_PRINTS;
+
 const collections = @import("collections.zig");
 const Compound = collections.Compound;
 const List = collections.List;
@@ -35,12 +38,14 @@ pub fn parseCompound(alloc: std.mem.Allocator, bin_slice: []const u8) NbtError!P
         const tag_name = bin_slice[offset..tag_name_end];
         offset += tag_name_length;
 
-        std.debug.print("\n", .{});
-        std.debug.print("parseCompound\n", .{});
-        std.debug.print("offset: {d}\n", .{offset});
-        std.debug.print("tag_type: {?}\n", .{tag_type});
-        std.debug.print("tag_name_length: {d}\n", .{tag_name_length});
-        std.debug.print("tag_name: {s}\n", .{tag_name});
+        if (ENABLE_DEBUG_PRINTS) {
+            std.debug.print("\n", .{});
+            std.debug.print("parseCompound\n", .{});
+            std.debug.print("offset: {d}\n", .{offset});
+            std.debug.print("tag_type: {?}\n", .{tag_type});
+            std.debug.print("tag_name_length: {d}\n", .{tag_name_length});
+            std.debug.print("tag_name: {s}\n", .{tag_name});
+        }
 
         switch (tag_type) {
             TagType.End => unreachable,
@@ -133,10 +138,12 @@ pub fn parseList(alloc: std.mem.Allocator, bin_slice: []const u8) NbtError!Parse
 
     var result = List.init(alloc, tag_type);
 
-    std.debug.print("\n", .{});
-    std.debug.print("parseList\n", .{});
-    std.debug.print("tag_type: {?}\n", .{tag_type});
-    std.debug.print("list_size: {d}\n", .{list_size});
+    if (ENABLE_DEBUG_PRINTS) {
+        std.debug.print("\n", .{});
+        std.debug.print("parseList\n", .{});
+        std.debug.print("tag_type: {?}\n", .{tag_type});
+        std.debug.print("list_size: {d}\n", .{list_size});
+    }
 
     switch (tag_type) {
         TagType.End => unreachable,
@@ -241,8 +248,10 @@ pub fn parseByteArray(bin_slice: []const u8) ParseResult([]const i8) {
     const value_u8 = bin_slice[4..size+4];
     const value_i8: []const i8 = @ptrCast(value_u8);
     
-    std.debug.print("parseByteArray size: {d}\n", .{size});
-    std.debug.print("parseByteArray value: {any}\n", .{value_i8});
+    if (ENABLE_DEBUG_PRINTS) {
+        std.debug.print("parseByteArray size: {d}\n", .{size});
+        std.debug.print("parseByteArray value: {any}\n", .{value_i8});
+    }
 
     return .{
         .size_bytes = size + 4,

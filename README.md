@@ -23,6 +23,4 @@ TO BE DONE
 
 ## TODO
 
-- Read NBT files into Compound struct
-- Convert Compound struct to SNBT text
 - Write `.schem` file from Compound struct (in separate project)

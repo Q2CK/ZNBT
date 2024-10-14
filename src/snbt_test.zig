@@ -1,5 +1,7 @@
 const std = @import("std");
 const znbt = @import("znbt.zig");
+const constants = @import("constants.zig");
+const ENABLE_DEBUG_PRINTS = constants.ENABLE_DEBUG_PRINTS;
 const SNBTFormat = znbt.io.SNBTFormat;
 
 test "compact byte" { try testCaseCompact("k", @as(i8, 42), "{k:42b}"); }
@@ -246,6 +248,8 @@ fn testSnbt(root: *znbt.collections.Compound, expected: []const u8, format: SNBT
     try znbt.io.writeSNBT(root.*, actual_arraylist.writer(), format);
     const actual = try actual_arraylist.toOwnedSlice();
     defer std.testing.allocator.free(actual);
-    std.debug.print("{s}\n", .{actual}); // Helps see the pretty printed value i nconsole
+    if (ENABLE_DEBUG_PRINTS) {
+        std.debug.print("{s}\n", .{actual}); // Helps see the pretty printed value i nconsole
+    }
     try std.testing.expectEqualStrings(expected, actual);
 }
