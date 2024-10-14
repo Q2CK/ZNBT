@@ -1,4 +1,5 @@
 const std = @import("std");
+const builtin = @import("builtin");
 
 const collections = @import("collections.zig");
 const Compound = collections.Compound;
@@ -44,35 +45,70 @@ pub fn parseCompound(alloc: std.mem.Allocator, bin_slice: []const u8) NbtError!P
         std.debug.print("tag_name: {s}\n", .{tag_name});
 
         switch (tag_type) {
+            TagType.End => unreachable,
             TagType.Byte => {
                 const value = std.mem.readInt(i8, &bin_slice[offset], .big);
-                tag = Tag.from(value);
+                tag = try Tag.from(alloc, value);
                 offset += 1;
             },
             TagType.Short => {
                 const value = std.mem.readVarInt(i16, bin_slice[offset..offset+2], .big);
-                tag = Tag.from(value);
+                tag = try Tag.from(alloc, value);
                 offset += 2;
-                std.debug.print("value: {d}\n", .{value});
             },
-            TagType.Compound => {
-                const parse_result = try parseCompound(alloc, bin_slice[offset..]);
-                tag = Tag.from(parse_result.parsed_value);
+            TagType.Int => {
+                const value = std.mem.readVarInt(i32, bin_slice[offset..offset+4], .big);
+                tag = try Tag.from(alloc, value);
+                offset += 4;
+            },
+            TagType.Long => {
+                const value = std.mem.readVarInt(i64, bin_slice[offset..offset+8], .big);
+                tag = try Tag.from(alloc, value);
+                offset += 8;
+            },
+            TagType.Float => {
+                const value = std.mem.readVarInt(u32, bin_slice[offset..offset+4], .big);
+                const float_ptr: *const f32 = @ptrCast(&value);
+                tag = try Tag.from(alloc, float_ptr.*);
+                offset += 4;
+            },
+            TagType.Double => {
+                const value = std.mem.readVarInt(u64, bin_slice[offset..offset+8], .big);
+                const double_ptr: *const f64 = @ptrCast(&value);
+                tag = try Tag.from(alloc, double_ptr.*);
+                offset += 8;
+            },
+            TagType.ByteArray => {
+                const parse_result = parseByteArray(bin_slice[offset..]);
+                tag = try Tag.from(alloc, parse_result.parsed_value);
+                offset += parse_result.size_bytes;
+            },
+            TagType.String => { 
+                const parse_result = parseString(bin_slice[offset..]);
+                tag = try Tag.from(alloc, parse_result.parsed_value);
                 offset += parse_result.size_bytes;
             },
             TagType.List => {
                 const parse_result = try parseList(alloc, bin_slice[offset..]);
-                tag = Tag.from(parse_result.parsed_value);
+                tag = try Tag.from(alloc, parse_result.parsed_value);
                 offset += parse_result.size_bytes;
             },
-            TagType.ByteArray => {
-                const parse_result = try parseByteArray(alloc, bin_slice[offset..]);
-                tag = Tag.from(parse_result.parsed_value);
+            TagType.Compound => {
+                const parse_result = try parseCompound(alloc, bin_slice[offset..]);
+                tag = try Tag.from(alloc, parse_result.parsed_value);
                 offset += parse_result.size_bytes;
             },
-            else => {
-                return NbtError.NotImplemented;
-                // std.debug.panic("Not supported tag type {?}", .{tag_type});
+            TagType.IntArray => { 
+                const parse_result = try parseIntArray(alloc, bin_slice[offset..]);
+                defer alloc.free(parse_result.parsed_value);
+                tag = try Tag.from(alloc, parse_result.parsed_value);
+                offset += parse_result.size_bytes;
+            },
+            TagType.LongArray => { 
+                const parse_result = try parseLongArray(alloc, bin_slice[offset..]);
+                defer alloc.free(parse_result.parsed_value);
+                tag = try Tag.from(alloc, parse_result.parsed_value);
+                offset += parse_result.size_bytes;
             },
         }
 
@@ -144,10 +180,9 @@ pub fn parseList(alloc: std.mem.Allocator, bin_slice: []const u8) NbtError!Parse
     };
 }
 
-pub fn parseByteArray(alloc: std.mem.Allocator, bin_slice: []const u8) NbtError!ParseResult([]const i8) {
+pub fn parseByteArray(bin_slice: []const u8) ParseResult([]const i8) {
     const size = std.mem.readVarInt(u32, bin_slice[0..4], .big);
-    const value_u8 = try alloc.dupe(u8, bin_slice[4..size+4]);
-    // const value_u8 = bin_slice[4..size+4];
+    const value_u8 = bin_slice[4..size+4];
     const value_i8: []const i8 = @ptrCast(value_u8);
     
     std.debug.print("parseByteArray size: {d}\n", .{size});
@@ -156,5 +191,52 @@ pub fn parseByteArray(alloc: std.mem.Allocator, bin_slice: []const u8) NbtError!
     return .{
         .size_bytes = size + 4,
         .parsed_value = value_i8,
+    };
+}
+
+pub fn parseString(bin_slice: []const u8) ParseResult([]const u8) {
+    const size = std.mem.readVarInt(u32, bin_slice[0..4], .big);
+    const value = bin_slice[4..size+4];
+
+    return .{
+        .size_bytes = size + 4,
+        .parsed_value = value,
+    };
+}
+
+/// Allocates a new array of i32 and interprets the input byte slice as an array of big-endian i32.
+/// Copies the values from byte slice to the allocated array.
+/// Caller is responsible for freeing the returned array.
+pub fn parseIntArray(alloc: std.mem.Allocator, bin_slice: []const u8) NbtError!ParseResult([]const i32) {
+    const size = std.mem.readVarInt(u32, bin_slice[0..4], .big);
+    const array_slice = bin_slice[4..][0..size*4];
+    const result = try alloc.alloc(i32, size);
+
+    for (0..size) |i| {
+        const current_slice = array_slice[i*4..][0..4];
+        const value = std.mem.readInt(i32, current_slice, .big);
+        result[i] = value;
+    }
+
+    return .{
+        .size_bytes = size * 4 + 4,
+        .parsed_value = result,
+    };
+}
+
+pub fn parseLongArray(alloc: std.mem.Allocator, bin_slice: []const u8) NbtError!ParseResult([]const i64) {
+    const size = std.mem.readVarInt(u32, bin_slice[0..4], .big);
+    const array_slice = bin_slice[4..][0..size*8];
+    const result = try alloc.alloc(i64, size);
+
+    for (0..size) |i| {
+        const current_slice = array_slice[i*8..][0..8];
+        const value = std.mem.readInt(i64, current_slice, .big);
+        result[i] = value;
+    }
+
+    return .{
+        .size_bytes = size * 8 + 4,
+        .parsed_value = result,
     };
 }

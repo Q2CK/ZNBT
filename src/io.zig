@@ -52,7 +52,7 @@ pub fn writeBin(alloc: std.mem.Allocator, name: []const u8, compound: collection
     _ = try raw_writer.write(name);
 
     // Write the tag's contents
-    const compound_tag = Tag.from(compound);
+    const compound_tag = try Tag.from(alloc, compound);
     try compound_tag.writeBinRepr(raw_writer);
 
     // Create a reader from the uncompressed data

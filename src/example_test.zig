@@ -1,6 +1,7 @@
 const std = @import("std");
 const znbt = @import("znbt.zig");
 
+// todo remove file
 test "example" {
     var root = znbt.collections.Compound.init(std.testing.allocator);
     defer root.deinit();

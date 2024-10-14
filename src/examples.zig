@@ -19,12 +19,86 @@ pub fn shortCompound(alloc: Allocator) NbtError!Compound {
     return result;
 }
 
+pub fn intCompound(alloc: Allocator) NbtError!Compound {
+    var result = Compound.init(alloc);
+    try result.putInt("int", 65536);
+    return result;
+}
+
+pub fn longCompound(alloc: Allocator) NbtError!Compound {
+    var result = Compound.init(alloc);
+    try result.putLong("long", 4294967296);
+    return result;
+}
+
+pub fn floatCompound(alloc: Allocator) NbtError!Compound {
+    var result = Compound.init(alloc);
+    try result.putFloat("float", 12.34);
+    return result;
+}
+
+pub fn doubleCompound(alloc: Allocator) NbtError!Compound {
+    var result = Compound.init(alloc);
+    try result.putDouble("double", 12.34);
+    return result;
+}
+
 pub fn listBytesCompound(alloc: Allocator) NbtError!Compound {
     var result = Compound.init(alloc);
     var list = List.init(alloc, .Byte);
     try list.append(@as(i8, 1));
     try list.append(@as(i8, 2));
     try list.append(@as(i8, 3));
+    try result.put("list", list);
+    return result;
+}
+
+pub fn listShortsCompound(alloc: Allocator) NbtError!Compound {
+    var result = Compound.init(alloc);
+    var list = List.init(alloc, .Short);
+    try list.append(@as(i16, 1));
+    try list.append(@as(i16, 2));
+    try list.append(@as(i16, 3));
+    try result.put("list", list);
+    return result;
+}
+
+pub fn listIntsCompound(alloc: Allocator) NbtError!Compound {
+    var result = Compound.init(alloc);
+    var list = List.init(alloc, .Int);
+    try list.append(@as(i32, 1));
+    try list.append(@as(i32, 2));
+    try list.append(@as(i32, 3));
+    try result.put("list", list);
+    return result;
+}
+
+pub fn listLongsCompound(alloc: Allocator) NbtError!Compound {
+    var result = Compound.init(alloc);
+    var list = List.init(alloc, .Long);
+    try list.append(@as(i64, 1));
+    try list.append(@as(i64, 2));
+    try list.append(@as(i64, 3));
+    try result.put("list", list);
+    return result;
+}
+
+pub fn listFloatsCompound(alloc: Allocator) NbtError!Compound {
+    var result = Compound.init(alloc);
+    var list = List.init(alloc, .Float);
+    try list.append(@as(f32, 12.34));
+    try list.append(@as(f32, 23.45));
+    try list.append(@as(f32, 34.56));
+    try result.put("list", list);
+    return result;
+}
+
+pub fn listDoublesCompound(alloc: Allocator) NbtError!Compound {
+    var result = Compound.init(alloc);
+    var list = List.init(alloc, .Double);
+    try list.append(@as(f64, 12.34));
+    try list.append(@as(f64, 23.45));
+    try list.append(@as(f64, 34.56));
     try result.put("list", list);
     return result;
 }
@@ -76,5 +150,17 @@ pub fn listComplexCompoundsCompound(alloc: Allocator) NbtError!Compound {
 pub fn byteArrayCompound(alloc: Allocator) NbtError!Compound {
     var result = Compound.init(alloc);
     try result.putByteArray("byteArray", &[_]i8{ 1, 2, 3 });
+    return result;
+}
+
+pub fn intArrayCompound(alloc: Allocator) NbtError!Compound {
+    var result = Compound.init(alloc);
+    try result.putIntArray("intArray", &[_]i32{ 1, 2, 3 });
+    return result;
+}
+
+pub fn longArrayCompound(alloc: Allocator) NbtError!Compound {
+    var result = Compound.init(alloc);
+    try result.putLongArray("longArray", &[_]i64{ 1, 2, 3 });
     return result;
 }

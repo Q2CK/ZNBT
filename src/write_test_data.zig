@@ -25,9 +25,53 @@ fn writeTestData() !void {
     defer short_compound.deinit();
     try writeCompoundNbt("short", short_compound);
 
+    var int_compound = try examples.intCompound(alloc);
+    defer int_compound.deinit();
+    try writeCompoundNbt("int", int_compound);
+
+    var long_compound = try examples.longCompound(alloc);
+    defer long_compound.deinit();
+    try writeCompoundNbt("long", long_compound);
+
+    var float_compound = try examples.floatCompound(alloc);
+    defer float_compound.deinit();
+    try writeCompoundNbt("float", float_compound);
+
+    var double_compound = try examples.doubleCompound(alloc);
+    defer double_compound.deinit();
+    try writeCompoundNbt("double", double_compound);
+
     var list_bytes_compound = try examples.listBytesCompound(alloc);
     defer list_bytes_compound.deinit();
     try writeCompoundNbt("list_bytes", list_bytes_compound);
+
+    var list_shorts_compound = try examples.listShortsCompound(alloc);
+    defer list_shorts_compound.deinit();
+    try writeCompoundNbt("list_shorts", list_shorts_compound);
+
+    var list_ints_compound = try examples.listIntsCompound(alloc);
+    defer list_ints_compound.deinit();
+    try writeCompoundNbt("list_ints", list_ints_compound);
+
+    var list_longs_compound = try examples.listLongsCompound(alloc);
+    defer list_longs_compound.deinit();
+    try writeCompoundNbt("list_longs", list_longs_compound);
+
+    var list_floats_compound = try examples.listFloatsCompound(alloc);
+    defer list_floats_compound.deinit();
+    try writeCompoundNbt("list_floats", list_floats_compound);
+
+    var list_doubles_compound = try examples.listDoublesCompound(alloc);
+    defer list_doubles_compound.deinit();
+    try writeCompoundNbt("list_doubles", list_doubles_compound);
+
+    var int_array_compound = try examples.intArrayCompound(alloc);
+    defer int_array_compound.deinit();
+    try writeCompoundNbt("int_array", int_array_compound);
+
+    var long_array_compound = try examples.longArrayCompound(alloc);
+    defer long_array_compound.deinit();
+    try writeCompoundNbt("long_array", long_array_compound);
 
     var list_compounds_compound = try examples.listCompoundsCompound(alloc);
     defer list_compounds_compound.deinit();

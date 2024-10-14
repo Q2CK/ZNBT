@@ -2,9 +2,9 @@ const std = @import("std");
 const NbtError = @import("errors.zig").NbtError;
 
 const collections = @import("collections.zig");
-const snbt_import = @import("snbt.zig");
-const writeArrayMultiline = snbt_import.writeArrayMultiline;
-const writeArrayCompact = snbt_import.writeArrayCompact;
+const snbt = @import("snbt.zig");
+const writeArrayMultiline = snbt.writeArrayMultiline;
+const writeArrayCompact = snbt.writeArrayCompact;
 
 const INDENT_SIZE_IN_SPACES = @import("constants.zig").INDENT_SIZE_IN_SPACES;
 
@@ -26,8 +26,44 @@ pub const TagType = enum(u8) {
     LongArray = 12,
 };
 
+pub const Tag = struct {
+    const Self = @This();
+
+    alloc: std.mem.Allocator,
+    tag_union: TagUnion,
+
+    /// Creates a `Tag` from a corresponding Zig type or znbt collection.
+    /// 
+    /// Important note: When you pass `List` and `Compound` collection
+    /// then this `Tag` will own the collection and will free it in `deinit`.
+    /// The ByteArray ([]i8), String ([]u8), IntArray ([]i32) and LongArray ([]i64)
+    /// are cloned on `from` call, so the original slice should be freed by the caller.
+    pub fn from(alloc: std.mem.Allocator, value: anytype) NbtError!Self {
+        return Self{
+            .alloc = alloc,
+            .tag_union = try TagUnion.from(alloc, value),
+        };
+    }
+
+    pub fn deinit(self: *Self) void {
+        self.tag_union.deinit(self.alloc);
+    }
+
+    pub fn snbtCompact(self: Self, writer: anytype) NbtError!void {
+        return self.tag_union.snbtCompact(writer);
+    }
+
+    pub fn snbtMultiline(self: Self, writer: anytype, indent: usize) NbtError!void {
+        return self.tag_union.snbtMultiline(writer, indent);
+    }
+
+    pub fn writeBinRepr(self: Self, writer: anytype) NbtError!void {
+        return self.tag_union.writeBinRepr(writer);
+    }
+};
+
 /// Union of all tag types
-pub const Tag = union(TagType) {
+const TagUnion = union(TagType) {
     // Alias for the type of this struct
     const Self = @This();
 
@@ -48,7 +84,7 @@ pub const Tag = union(TagType) {
     LongArray: []const i64,
 
     /// Creates a `Tag` from a corresponding Zig type.
-    pub fn from(value: anytype) Self {
+    pub fn from(alloc: std.mem.Allocator, value: anytype) NbtError!Self {
         const valueType = @TypeOf(value);
 
         return switch (valueType) {
@@ -61,22 +97,26 @@ pub const Tag = union(TagType) {
             f32 => Self{ .Float = value },
             f64 => Self{ .Double = value },
 
-            []const i8, []i8 => Self{ .ByteArray = value },
-            []const u8, []u8 => Self{ .String = value },
+            []const i8, []i8 => Self{ .ByteArray = try alloc.dupe(i8, value) },
+            []const u8, []u8 => Self{ .String = try alloc.dupe(u8, value) },
             collections.List => Self{ .List = value },
             collections.Compound => Self{ .Compound = value },
-            []const i32, []i32 => Self{ .IntArray = value },
-            []const i64, []i64 => Self{ .LongArray = value },
+            []const i32, []i32 => Self{ .IntArray = try alloc.dupe(i32, value) },
+            []const i64, []i64 => Self{ .LongArray = try alloc.dupe(i64, value) },
 
             else => @compileError("Type " ++ @typeName(valueType) ++ " can not be converted into an NBT tag"),
         };
     }
 
     /// Deinitializes the `Tag`, freeing the memory of the contained tags and itself
-    pub fn deinit(self: *Self) void {
+    pub fn deinit(self: *Self, alloc: std.mem.Allocator) void {
         switch (self.*) {
             .List => |*list| list.deinit(),
             .Compound => |*compound| compound.deinit(),
+            .ByteArray => |slice| alloc.free(slice),
+            .String => |slice| alloc.free(slice),
+            .IntArray => |slice| alloc.free(slice),
+            .LongArray => |slice| alloc.free(slice),
             else => {},
         }
     }
@@ -165,7 +205,7 @@ pub const Tag = union(TagType) {
                 while (tags_iter.next()) |entry| {
                     // Write the tag's type ID
                     const tag = entry.value_ptr.*;
-                    const tag_type: TagType = tag;
+                    const tag_type: TagType = tag.tag_union;
                     _ = try writer.write(&.{@intFromEnum(tag_type)});
 
                     // Write the tag's name length
@@ -246,8 +286,8 @@ pub const Tag = union(TagType) {
             .Short => |value| _ = try writer.print("{d}s", .{value}),
             .Int => |value| _ = try writer.print("{d}", .{value}),
             .Long => |value| _ = try writer.print("{d}l", .{value}),
-            .Double => |value| _ = try writer.print("{d:.16}d", .{value}),
-            .Float => |value| _ = try writer.print("{d:.16}f", .{value}),
+            .Double => |value| _ = try writer.print("{d}d", .{value}),
+            .Float => |value| _ = try writer.print("{d}f", .{value}),
             .String => |value| _ = try writer.print("\"{s}\"", .{value}),
             .Compound => |value| try value.snbtMultiline(writer, indent),
             .List => |value| try value.snbtMultiline(writer, indent),

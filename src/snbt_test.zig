@@ -215,7 +215,31 @@ test "multiline long array" {
     try testSnbt(&root, expected, SNBTFormat.MultiLine);
 }
 
-// TODO: Test multiline double, trim trailing zeros
+test "multiline float" {
+    var root = znbt.collections.Compound.init(std.testing.allocator);
+    defer root.deinit();
+    try root.putFloat("a", 12.34);
+
+    const expected =
+        \\{
+        \\    a: 12.34f
+        \\}
+    ;
+    try testSnbt(&root, expected, SNBTFormat.MultiLine);
+}
+
+test "multiline double" {
+    var root = znbt.collections.Compound.init(std.testing.allocator);
+    defer root.deinit();
+    try root.putDouble("a", 12.34);
+
+    const expected =
+        \\{
+        \\    a: 12.34d
+        \\}
+    ;
+    try testSnbt(&root, expected, SNBTFormat.MultiLine);
+}
 
 fn testSnbt(root: *znbt.collections.Compound, expected: []const u8, format: SNBTFormat) !void {
     var actual_arraylist = std.ArrayList(u8).init(std.testing.allocator);
