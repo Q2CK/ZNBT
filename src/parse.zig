@@ -31,19 +31,26 @@ pub fn parseCompound(alloc: std.mem.Allocator, bin_slice: []const u8) NbtError!P
     var offset: u32 = 1;
 
     while (tag_type != TagType.End) {
-        // todo extract parse name function
-        const tag_name_length = std.mem.readVarInt(u16, bin_slice[offset..offset+2], .big);
-        offset += 2;
-        const tag_name_end = offset + tag_name_length;
-        const tag_name = bin_slice[offset..tag_name_end];
-        offset += tag_name_length;
-
         if (ENABLE_DEBUG_PRINTS) {
             std.debug.print("\n", .{});
             std.debug.print("parseCompound\n", .{});
             std.debug.print("offset: {d}\n", .{offset});
             std.debug.print("tag_type: {?}\n", .{tag_type});
+        }
+
+        // todo extract parse name function
+        const tag_name_length = std.mem.readVarInt(u16, bin_slice[offset..offset+2], .big);
+        offset += 2;
+        if (ENABLE_DEBUG_PRINTS) {
+            const safe_print_end = @min(bin_slice.len, 30);
+            std.debug.print("bin_slice[offset..]: {X:0>2}\n", .{bin_slice[offset..safe_print_end]});
             std.debug.print("tag_name_length: {d}\n", .{tag_name_length});
+        }
+        const tag_name_end = offset + tag_name_length;
+        const tag_name = bin_slice[offset..tag_name_end];
+        offset += tag_name_length;
+
+        if (ENABLE_DEBUG_PRINTS) {
             std.debug.print("tag_name: {s}\n", .{tag_name});
         }
 
@@ -119,6 +126,7 @@ pub fn parseCompound(alloc: std.mem.Allocator, bin_slice: []const u8) NbtError!P
 
         tag_type_u8 = std.mem.readInt(u8, &bin_slice[offset], .big);
         tag_type = @enumFromInt(tag_type_u8);
+        offset += 1;
     }
 
     const end_tag_size = 1;

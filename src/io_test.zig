@@ -1,6 +1,6 @@
 const std = @import("std");
 const znbt = @import("znbt.zig");
-
+const examples = @import("examples.zig");
 test "read byte" {
     const expected =
         \\{
@@ -226,32 +226,32 @@ test "read list lists" {
     try test_read("list_lists.nbt", expected);
 }
 
-// test "read list complex compounds" {
-//     const expected = 
-//         \\{
-//         \\    list: [
-//         \\        {
-//         \\            number 1: 123s,
-//         \\            number 2: 456s,
-//         \\            number 3: 789s
-//         \\        },
-//         \\        {
-//         \\            string 1: "str1",
-//         \\            string 2: "str2"
-//         \\        },
-//         \\        {
-//         \\            array: [
-//         \\                L;
-//         \\                1l
-//         \\            ],
-//         \\            double: 12.34d
-//         \\        }
-//         \\    ]
-//         \\}
-//     ;
+test "read list complex compounds" {
+    const expected = 
+        \\{
+        \\    list: [
+        \\        {
+        \\            number 1: 123s,
+        \\            number 2: 456s,
+        \\            number 3: 789s
+        \\        },
+        \\        {
+        \\            string 1: "str1",
+        \\            string 2: "str2"
+        \\        },
+        \\        {
+        \\            array: [
+        \\                L;
+        \\                1l
+        \\            ],
+        \\            double: 12.34d
+        \\        }
+        \\    ]
+        \\}
+    ;
 
-//     try test_read("list_complex_compounds.nbt", expected);   
-// }
+    try test_read("list_complex_compounds.nbt", expected);   
+}
 
 fn test_read(input_filename: []const u8, expected: []const u8) !void {
     const alloc = std.testing.allocator;
