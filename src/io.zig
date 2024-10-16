@@ -94,7 +94,7 @@ pub fn readBin(alloc: std.mem.Allocator, path: []const u8) !collections.Compound
         std.debug.print("tag_name: {s}\n", .{tag_name});
     }
 
-    const parse_result = try parser.parseCompound(alloc, bin_slice[tag_name_end..]);
+    const parse_result = try parser.parseCompound(alloc, bin_slice, tag_name_end);
 
     return parse_result.parsed_value;
 }

@@ -1,6 +1,7 @@
 const std = @import("std");
 const znbt = @import("znbt.zig");
 const examples = @import("examples.zig");
+
 test "read byte" {
     const expected =
         \\{
@@ -231,8 +232,8 @@ test "read list complex compounds" {
         \\{
         \\    list: [
         \\        {
-        \\            number 1: 123s,
         \\            number 2: 456s,
+        \\            number 1: 123s,
         \\            number 3: 789s
         \\        },
         \\        {
