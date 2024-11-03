@@ -23,8 +23,6 @@ pub const Compression = enum {
 pub const SNBTFormat = enum {
     /// No unnecessary characters
     Compact,
-    /// Readable single-line formatting
-    SingleLine,
     /// Readable multi-line formatting
     MultiLine
 };
