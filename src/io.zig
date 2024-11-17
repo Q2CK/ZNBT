@@ -15,16 +15,14 @@ const INDENT_SIZE_IN_SPACES = constants_import.INDENT_SIZE_IN_SPACES;
 const parser = @import("parse.zig");
 
 /// Compression method for the final binary NBT data
-pub const Compression = enum { 
-    None, Gzip, Zlib 
-};
+pub const Compression = enum { None, Gzip, Zlib };
 
-/// Text formatting method for SNBT data 
+/// Text formatting method for SNBT data
 pub const SNBTFormat = enum {
     /// No unnecessary characters
     Compact,
     /// Readable multi-line formatting
-    MultiLine
+    MultiLine,
 };
 
 /// Writes binary NBT data into the `writer`, using the given `name` and `compound` as the root tag.
@@ -102,6 +100,5 @@ pub fn writeSNBT(compound: collections.Compound, writer: anytype, format: SNBTFo
     switch (format) {
         .Compact => try compound.snbtCompact(writer),
         .MultiLine => try compound.snbtMultiline(writer, 0),
-        else => std.debug.panic("SNBT Format {s} is not implemented.", .{@tagName(format)}),
     }
 }
