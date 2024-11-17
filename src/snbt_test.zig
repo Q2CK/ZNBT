@@ -1,5 +1,7 @@
 const std = @import("std");
 const znbt = @import("znbt.zig");
+const constants = @import("constants.zig");
+const ENABLE_DEBUG_PRINTS = constants.ENABLE_DEBUG_PRINTS;
 const SNBTFormat = znbt.io.SNBTFormat;
 
 test "compact byte" { try testCaseCompact("k", @as(i8, 42), "{k:42b}"); }
@@ -119,27 +121,6 @@ test "multiline list of compounds" {
     try testSnbt(&root, expected, SNBTFormat.MultiLine);
 }
 
-test "multiline long array" {
-    var root = znbt.collections.Compound.init(std.testing.allocator);
-    defer root.deinit();
-    var longArray = znbt.collections.List.init(std.testing.allocator, .Long);
-    try longArray.append(@as(i64, 123));
-    try longArray.append(@as(i64, 456));
-    try longArray.append(@as(i64, 789));
-    try root.put("longArray", longArray);
-
-    const expected =
-        \\{
-        \\    longArray: [
-        \\        123l,
-        \\        456l,
-        \\        789l
-        \\    ]
-        \\}
-    ;
-    try testSnbt(&root, expected, SNBTFormat.MultiLine);
-}
-
 test "multiline byte" {
     var root = znbt.collections.Compound.init(std.testing.allocator);
     defer root.deinit();
@@ -188,6 +169,7 @@ test "multiline byte array" {
     const expected =
         \\{
         \\    byteArray: [
+        \\        B;
         \\        -1b,
         \\        2b,
         \\        3b
@@ -206,6 +188,7 @@ test "multiline int array" {
     const expected =
         \\{
         \\    intArray: [
+        \\        I;
         \\        -12,
         \\        24,
         \\        3345
@@ -215,11 +198,58 @@ test "multiline int array" {
     try testSnbt(&root, expected, SNBTFormat.MultiLine);
 }
 
+test "multiline long array" {
+    var root = znbt.collections.Compound.init(std.testing.allocator);
+    defer root.deinit();
+    const longArrayValue: [3]i64 = .{-12, 24, 3345};
+    try root.put("longArray", @as([]const i64, &longArrayValue));
+
+    const expected =
+        \\{
+        \\    longArray: [
+        \\        L;
+        \\        -12l,
+        \\        24l,
+        \\        3345l
+        \\    ]
+        \\}
+    ;
+    try testSnbt(&root, expected, SNBTFormat.MultiLine);
+}
+
+test "multiline float" {
+    var root = znbt.collections.Compound.init(std.testing.allocator);
+    defer root.deinit();
+    try root.putFloat("a", 12.34);
+
+    const expected =
+        \\{
+        \\    a: 12.34f
+        \\}
+    ;
+    try testSnbt(&root, expected, SNBTFormat.MultiLine);
+}
+
+test "multiline double" {
+    var root = znbt.collections.Compound.init(std.testing.allocator);
+    defer root.deinit();
+    try root.putDouble("a", 12.34);
+
+    const expected =
+        \\{
+        \\    a: 12.34d
+        \\}
+    ;
+    try testSnbt(&root, expected, SNBTFormat.MultiLine);
+}
+
 fn testSnbt(root: *znbt.collections.Compound, expected: []const u8, format: SNBTFormat) !void {
     var actual_arraylist = std.ArrayList(u8).init(std.testing.allocator);
     try znbt.io.writeSNBT(root.*, actual_arraylist.writer(), format);
     const actual = try actual_arraylist.toOwnedSlice();
-    std.debug.print("{s}\n", .{actual}); // Helps see the pretty printed value i nconsole
-    try std.testing.expectEqualSlices(u8, expected, actual);
-    std.testing.allocator.free(actual);
+    defer std.testing.allocator.free(actual);
+    if (ENABLE_DEBUG_PRINTS) {
+        std.debug.print("{s}\n", .{actual}); // Helps see the pretty printed value i nconsole
+    }
+    try std.testing.expectEqualStrings(expected, actual);
 }

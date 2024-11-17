@@ -34,11 +34,14 @@ pub const List = struct {
     /// NBT tags contained in this List
     tags: std.ArrayList(Tag),
 
+    alloc: Allocator,
+
     /// Initializes the List and sets the expected type of the contained tags.
     pub fn init(alloc: Allocator, tags_type: TagType) Self {
         return Self{
             .tags_type = tags_type,
             .tags = std.ArrayList(Tag).init(alloc),
+            .alloc = alloc,
         };
     }
 
@@ -61,10 +64,10 @@ pub const List = struct {
     /// This only concerns `value`s of type `List` and `Compound`, as other tag types
     /// do not contain dynamically allocated memory
     pub fn append(self: *Self, value: anytype) NbtError!void {
-        var tag = Tag.from(value);
+        var tag = try Tag.from(self.alloc, value);
         errdefer tag.deinit();
 
-        if (tag != self.tags_type) {
+        if (tag.tag_union != self.tags_type) {
             return NbtError.ListTypeMismatch;
         } else {
             try self.tags.append(tag);
@@ -82,7 +85,7 @@ pub const List = struct {
     /// This only concerns `value`s of type `List` and `Compound`, as other tag types
     /// do not contain dynamically allocated memory
     pub fn insert(self: *Self, i: usize, value: anytype) NbtError!void {
-        var tag = Tag.from(value);
+        var tag = try Tag.from(self.alloc, value);
         errdefer tag.deinit();
 
         if (tag != self.tags_type) {
@@ -136,16 +139,19 @@ pub const Compound = struct {
     /// NBT tags contained in this Compound
     tags: std.StringHashMap(Tag),
 
+    alloc: Allocator,
+
     /// Initializes the Compound.
     pub fn init(alloc: Allocator) Self {
-        return Self{ .tags = std.StringHashMap(Tag).init(alloc) };
+        return Self{ .tags = std.StringHashMap(Tag).init(alloc), .alloc = alloc };
     }
 
-    /// Deinitializes the List, freeing the memory of the contained tags and itself.
+    /// Deinitializes the `Compound`, freeing the memory of the `std.StringHashMap`'s keys, contained tags and itself.
     pub fn deinit(self: *Self) void {
-        var tags_iter = self.tags.valueIterator();
-        while (tags_iter.next()) |tag| {
-            tag.deinit();
+        var kv_iter = self.tags.iterator();
+        while (kv_iter.next()) |kv| {
+            kv.value_ptr.*.deinit();
+            self.alloc.free(kv.key_ptr.*);
         }
         self.tags.deinit();
     }
@@ -156,15 +162,56 @@ pub const Compound = struct {
     /// Lack of a matching NBT type causes a compile error.
     ///
     /// Does NOT copy the memory referenced by `name`. The string referenced by `name`
-    /// must live at least as long as the entire `Compund`
+    /// must live at least as long as the entire `Compound`
     ///
     /// If the function fails, the tag will NOT be put, meaning its memory will NOT
     /// be managed by the Compound. The tag must then be freed accordingly by the caller.
     /// This only concerns `value`s of type `List` and `Compound`, as other tag types
     /// do not contain dynamically allocated memory
     pub fn put(self: *Self, name: []const u8, value: anytype) NbtError!void {
-        const new_tag = Tag.from(value);
-        try self.tags.put(name, new_tag);
+        const new_tag = try Tag.from(self.alloc, value);
+        try self.putTag(name, new_tag);
+    }
+
+    pub fn putTag(self: *Self, name: []const u8, tag: Tag) NbtError!void {
+        const name_copy = try self.alloc.dupe(u8, name);
+        try self.tags.put(name_copy, tag);
+    }
+
+    pub fn putByte(self: *Self, name: []const u8, value: i8) NbtError!void {
+        try self.put(name, value);
+    }
+
+    pub fn putShort(self: *Self, name: []const u8, value: i16) NbtError!void {
+        try self.put(name, value);
+    }
+
+    pub fn putInt(self: *Self, name: []const u8, value: i32) NbtError!void {
+        try self.put(name, value);
+    }
+
+    pub fn putLong(self: *Self, name: []const u8, value: i64) NbtError!void {
+        try self.put(name, value);
+    }
+
+    pub fn putFloat(self: *Self, name: []const u8, value: f32) NbtError!void {
+        try self.put(name, value);
+    }
+
+    pub fn putDouble(self: *Self, name: []const u8, value: f64) NbtError!void {
+        try self.put(name, value);
+    }
+
+    pub fn putByteArray(self: *Self, name: []const u8, value: []const i8) NbtError!void {
+        try self.put(name, value);
+    }
+
+    pub fn putIntArray(self: *Self, name: []const u8, value: []const i32) NbtError!void {
+        try self.put(name, value);
+    }
+
+    pub fn putLongArray(self: *Self, name: []const u8, value: []const i64) NbtError!void {
+        try self.put(name, value);
     }
 
     /// An NBT-compatible wrapper around the `remove` method on `std.StringHashMap`.
@@ -195,6 +242,32 @@ pub const Compound = struct {
         try compoundSnbtCompact(self.tags, writer);
     }
 
+    /// Returns multi-line human readable string representation (SNBT) of this compound with all the nested values.
+    /// 
+    /// Example format:
+    /// ```
+    /// {
+    ///     list: [
+    ///         {
+    ///             number1: 123,
+    ///             number2: 456,
+    ///             number3: 789
+    ///         },
+    ///         {
+    ///             string1: "str1",
+    ///             string2: "str2"
+    ///         },
+    ///         {
+    ///             array: [
+    ///                 1
+    ///             ],
+    ///             double: 12.34
+    ///         }
+    ///     ]
+    /// }
+    /// ```
+    ///
+    /// https://minecraft.fandom.com/wiki/NBT_format#SNBT_format
     pub fn snbtMultiline(self: Self, writer: anytype, indent: usize) NbtError!void {
        try compoundSnbtMultiline(self.tags, writer, indent);
     }

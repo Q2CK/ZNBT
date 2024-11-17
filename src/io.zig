@@ -9,21 +9,20 @@ const Tag = tag_import.Tag;
 const TagType = tag_import.TagType;
 
 const constants_import = @import("constants.zig");
+const ENABLE_DEBUG_PRINTS = constants_import.ENABLE_DEBUG_PRINTS;
 const INDENT_SIZE_IN_SPACES = constants_import.INDENT_SIZE_IN_SPACES;
 
-/// Compression method for the final binary NBT data
-pub const Compression = enum { 
-    None, Gzip, Zlib 
-};
+const parser = @import("parse.zig");
 
-/// Text formatting method for SNBT data 
+/// Compression method for the final binary NBT data
+pub const Compression = enum { None, Gzip, Zlib };
+
+/// Text formatting method for SNBT data
 pub const SNBTFormat = enum {
     /// No unnecessary characters
     Compact,
-    /// Readable single-line formatting
-    SingleLine,
     /// Readable multi-line formatting
-    MultiLine
+    MultiLine,
 };
 
 /// Writes binary NBT data into the `writer`, using the given `name` and `compound` as the root tag.
@@ -50,7 +49,7 @@ pub fn writeBin(alloc: std.mem.Allocator, name: []const u8, compound: collection
     _ = try raw_writer.write(name);
 
     // Write the tag's contents
-    const compound_tag = Tag.from(compound);
+    const compound_tag = try Tag.from(alloc, compound);
     try compound_tag.writeBinRepr(raw_writer);
 
     // Create a reader from the uncompressed data
@@ -66,16 +65,34 @@ pub fn writeBin(alloc: std.mem.Allocator, name: []const u8, compound: collection
 }
 
 /// Reads binary NBT data from the file at `path` and returns the root compound as a `collections.Compound`.
-/// TODO: Implement this method and add tests
 pub fn readBin(alloc: std.mem.Allocator, path: []const u8) !collections.Compound {
     const file = try std.fs.cwd().openFile(path, .{});
     defer file.close();
 
-    const reader = file.reader();
-    const content = try reader.readAllAlloc(alloc, std.math.maxInt(usize));
-    defer alloc.free(content);
+    var array_list = std.ArrayList(u8).init(std.testing.allocator);
+    defer array_list.deinit();
 
-    return collections.Compound.init(alloc);
+    try std.compress.gzip.decompress(file.reader(), array_list.writer());
+
+    const bin_slice = try array_list.toOwnedSlice();
+    defer alloc.free(bin_slice);
+
+    const tag_type = std.mem.readInt(u8, &bin_slice[0], .big);
+    const tag_name_length = std.mem.readInt(u16, bin_slice[1..3], .big);
+    const tag_name_end = tag_name_length + 3;
+    const tag_name = bin_slice[3..tag_name_end];
+
+    if (ENABLE_DEBUG_PRINTS) {
+        std.debug.print("\n", .{});
+        std.debug.print("tag_type: {d}\n", .{tag_type});
+        std.debug.print("tag_name_length: {d}\n", .{tag_name_length});
+        std.debug.print("typeof tag_name_length: {?}\n", .{@TypeOf(tag_name_length)});
+        std.debug.print("tag_name: {s}\n", .{tag_name});
+    }
+
+    const parse_result = try parser.parseCompound(alloc, bin_slice, tag_name_end);
+
+    return parse_result.parsed_value;
 }
 
 /// Writes NBT data in SNBT format into the `writer`, using the given `compound` as the root tag.
@@ -83,6 +100,5 @@ pub fn writeSNBT(compound: collections.Compound, writer: anytype, format: SNBTFo
     switch (format) {
         .Compact => try compound.snbtCompact(writer),
         .MultiLine => try compound.snbtMultiline(writer, 0),
-        else => std.debug.panic("SNBT Format {s} is not implemented.", .{@tagName(format)}),
     }
 }
