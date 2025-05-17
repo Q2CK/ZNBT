@@ -6,7 +6,7 @@ pub const NbtError = error {
     ValueOutOfBounds,
     NameTooLong,
     NotImplemented
-} || std.mem.Allocator.Error || FileError;
+} || anyerror;
 
 // TODO: Use some error namespace from std that I could not find instead of this
 pub const FileError = error {
