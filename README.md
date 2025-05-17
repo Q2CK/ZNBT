@@ -4,7 +4,7 @@ ZNBT is a Zig library for working with the Named Binary Tag (NBT) format, common
 
 ## Zig Version
 
-Tested on Zig 0.13.0
+Tested on Zig 0.14.0
 
 ## Features
 
